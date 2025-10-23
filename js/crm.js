@@ -518,7 +518,7 @@ const crm = {
             
             // Open WhatsApp
             const phone = customer.phone.replace(/\D/g, '');
-            const message = `Hello ${customer.name}, this is FreshWash Pro. How can we assist you today?`;
+            const message = `Hello ${customer.name}, Hello, trust you're having a wonderful day `;
             const encodedMessage = encodeURIComponent(message);
             window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
         }
@@ -530,7 +530,7 @@ const crm = {
             // Update last contact
             this.updateLastContact(customerId);
             
-            const subject = 'FreshWash Pro - Customer Service';
+            const subject = 'De Supreme Laundry House - Customer Service';
             const body = `Dear ${customer.name},\n\n`;
             window.open(`mailto:${customer.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
         } else {
