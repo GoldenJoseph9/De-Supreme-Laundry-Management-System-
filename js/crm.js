@@ -72,7 +72,7 @@ const crm = {
     },
 
     createFilterSection: function() {
-        const crmCard = document.querySelector('#crm .card');
+        const crmCard = document.querySelector('#crm .card1');
         const filterSection = document.createElement('div');
         filterSection.className = 'filter-section';
         filterSection.innerHTML = `
@@ -113,17 +113,17 @@ const crm = {
                 </div>
             </div>
         `;
-        crmCard.insertBefore(filterSection, crmCard.querySelector('.crm-header').nextSibling);
+        crmCard.insertBefore(filterSection, crmCard.querySelector('.customer-table'));
     },
 
     renderCustomerTable: function(customers = null) {
-        const allCustomers = customers || storage.get('customers');
+        const allCustomers = customers || storage.get('customers') || [];
         const customerTableBody = document.getElementById('customer-table-body');
         
         if (allCustomers.length === 0) {
             customerTableBody.innerHTML = `
                 <tr>
-                    <td colspan="8">
+                    <td colspan="6">
                         <div class="empty-state">
                             <i class="fas fa-users"></i>
                             <h3>No Customers Found</h3>
@@ -183,7 +183,7 @@ const crm = {
                 <i class="fas fa-envelope action-icon action-email" 
                    title="Send Email" 
                    onclick="crm.emailCustomer('${customer.id}')"></i>
-                <i class="fas fa-eye action-icon action-edit" 
+                <i class="fas fa-eye action-icon action-view" 
                    title="View Details" 
                    onclick="crm.viewCustomerDetails('${customer.id}')"></i>
             </td>
@@ -201,7 +201,7 @@ const crm = {
             }
         }
         
-        if (customer.preferences === 'premium') {
+        if (customer.status === 'premium') {
             tags.push('<span class="tag" style="background: #e8f6ef; color: var(--secondary);">Premium</span>');
         }
         
@@ -223,7 +223,7 @@ const crm = {
     },
 
     applyFilters: function() {
-        let customers = storage.get('customers');
+        let customers = storage.get('customers') || [];
         
         // Apply search filter
         if (this.filters.search) {
@@ -260,6 +260,8 @@ const crm = {
         } else {
             title.textContent = 'Add New Customer';
             form.reset();
+            // Hide status field for new customers
+            document.getElementById('status-field').style.display = 'none';
         }
         
         modal.classList.add('active');
@@ -279,24 +281,23 @@ const crm = {
         document.getElementById('customer-status').value = customer.status;
         
         // Show status field for editing
-        document.getElementById('customer-status').closest('.form-group').style.display = 'block';
+        document.getElementById('status-field').style.display = 'block';
     },
 
     handleCustomerFormSubmit: function(e) {
         e.preventDefault();
         
-        const formData = new FormData(e.target);
         const customerData = {
             name: document.getElementById('customer-name').value,
             phone: document.getElementById('customer-phone').value,
             email: document.getElementById('customer-email').value,
             address: document.getElementById('customer-address').value,
             preferences: document.getElementById('customer-preferences').value,
-            status: document.getElementById('customer-status').value || 'active',
+            status: this.currentCustomer ? document.getElementById('customer-status').value : 'active',
             lastVisit: new Date().toISOString().split('T')[0],
             lastContact: new Date().toISOString(),
-            notes: [],
-            tags: []
+            notes: this.currentCustomer ? this.currentCustomer.notes || [] : [],
+            tags: this.currentCustomer ? this.currentCustomer.tags || [] : []
         };
 
         if (this.currentCustomer) {
@@ -311,7 +312,7 @@ const crm = {
     },
 
     addCustomer: function(customerData) {
-        const customers = storage.get('customers');
+        const customers = storage.get('customers') || [];
         const newCustomer = {
             id: utils.generateId(),
             ...customerData,
@@ -323,23 +324,27 @@ const crm = {
         storage.set('customers', customers);
         
         // Add activity
-        dashboard.addActivity({
-            id: utils.generateId(),
-            type: "customer",
-            title: "New Customer Added",
-            description: `${newCustomer.name} added to CRM`,
-            timestamp: "Just now",
-            icon: "user-plus",
-            color: "#e74c3c"
-        });
+        if (typeof dashboard !== 'undefined') {
+            dashboard.addActivity({
+                id: utils.generateId(),
+                type: "customer",
+                title: "New Customer Added",
+                description: `${newCustomer.name} added to CRM`,
+                timestamp: "Just now",
+                icon: "user-plus",
+                color: "#e74c3c"
+            });
+        }
         
         this.renderCustomerTable();
-        dashboard.updateDashboardStats();
+        if (typeof dashboard !== 'undefined') {
+            dashboard.updateDashboardStats();
+        }
         utils.showToast('Customer added successfully!');
     },
 
     updateCustomer: function(customerId, customerData) {
-        const customers = storage.get('customers');
+        const customers = storage.get('customers') || [];
         const customerIndex = customers.findIndex(c => c.id === customerId);
         
         if (customerIndex !== -1) {
@@ -356,7 +361,7 @@ const crm = {
     },
 
     editCustomer: function(customerId) {
-        const customers = storage.get('customers');
+        const customers = storage.get('customers') || [];
         const customer = customers.find(c => c.id === customerId);
         
         if (customer) {
@@ -365,104 +370,152 @@ const crm = {
     },
 
     viewCustomerDetails: function(customerId) {
-        const customers = storage.get('customers');
+        console.log('🔍 Opening customer details for:', customerId);
+        
+        const customers = storage.get('customers') || [];
         const customer = customers.find(c => c.id === customerId);
         
         if (customer) {
             this.showCustomerDetails(customer);
+        } else {
+            console.error('❌ Customer not found:', customerId);
+            utils.showToast('Customer not found!');
         }
     },
 
     showCustomerDetails: function(customer) {
-        // Create or show details panel
-        let detailsPanel = document.querySelector('.customer-details');
-        if (!detailsPanel) {
-            detailsPanel = document.createElement('div');
-            detailsPanel.className = 'customer-details';
-            document.querySelector('#crm .card').appendChild(detailsPanel);
-        }
-        
-        detailsPanel.innerHTML = this.createCustomerDetailsHTML(customer);
-        detailsPanel.classList.add('active');
-        
-        // Bind note submission
-        const noteForm = detailsPanel.querySelector('.note-form');
-        if (noteForm) {
-            noteForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                this.addCustomerNote(customer.id, e.target.note.value);
-                e.target.reset();
-            });
-        }
-    },
-
-    createCustomerDetailsHTML: function(customer) {
-        return `
-            <div style="display: flex; justify-content: between; align-items: start; margin-bottom: 20px;">
-                <h3 style="margin: 0;">${customer.name}</h3>
-                <button class="btn" onclick="crm.closeCustomerDetails()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
-            <div class="details-grid">
-                <div class="detail-group">
-                    <span class="detail-label">Contact Information</span>
-                    <span class="detail-value">${customer.phone}</span>
-                    <span class="detail-value">${customer.email || 'No email'}</span>
-                </div>
-                
-                <div class="detail-group">
-                    <span class="detail-label">Address</span>
-                    <span class="detail-value">${customer.address || 'No address provided'}</span>
-                </div>
-                
-                <div class="detail-group">
-                    <span class="detail-label">Customer Status</span>
-                    <span class="status status-${customer.status}">${customer.status.charAt(0).toUpperCase() + customer.status.slice(1)}</span>
-                </div>
-                
-                <div class="detail-group">
-                    <span class="detail-label">Service Preference</span>
-                    <span class="detail-value" style="text-transform: capitalize;">${customer.preferences.replace('-', ' ')}</span>
-                </div>
-                
-                <div class="detail-group">
-                    <span class="detail-label">Last Visit</span>
-                    <span class="detail-value">${utils.formatDate(customer.lastVisit)}</span>
-                </div>
-                
-                <div class="detail-group">
-                    <span class="detail-label">Last Contact</span>
-                    <span class="detail-value">${this.getLastContactInfo(customer)}</span>
-                </div>
-            </div>
-            
-            <div class="notes-section">
-                <h4>Customer Notes</h4>
-                <div class="notes-list" id="notes-list-${customer.id}">
-                    ${this.renderCustomerNotes(customer.notes || [])}
-                </div>
-                <form class="note-form">
-                    <textarea class="note-input" name="note" placeholder="Add a note about this customer..." required></textarea>
-                    <button type="submit" class="btn btn-secondary">
-                        <i class="fas fa-plus"></i> Add Note
+        // Create overlay and panel
+        const overlay = document.createElement('div');
+        overlay.className = 'customer-details-overlay';
+        overlay.innerHTML = `
+            <div class="customer-details-panel">
+                <div class="details-header">
+                    <h3>${customer.name}</h3>
+                    <button class="close-details">
+                        <i class="fas fa-times"></i>
                     </button>
-                </form>
-            </div>
-            
-            <div style="margin-top: 20px; display: flex; gap: 10px;">
-                <button class="btn" onclick="crm.editCustomer('${customer.id}')">
-                    <i class="fas fa-edit"></i> Edit Customer
-                </button>
-                <button class="btn btn-secondary" onclick="crm.messageCustomer('${customer.id}')">
-                    <i class="fab fa-whatsapp"></i> Send Message
-                </button>
-                <button class="btn" onclick="crm.emailCustomer('${customer.id}')">
-                    <i class="fas fa-envelope"></i> Send Email
-                </button>
+                </div>
+                
+                <div class="details-grid">
+                    <div class="detail-group">
+                        <span class="detail-label">Contact Information</span>
+                        <span class="detail-value">📱 ${customer.phone}</span>
+                        <span class="detail-value">📧 ${customer.email || 'No email'}</span>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Address</span>
+                        <span class="detail-value">📍 ${customer.address || 'No address provided'}</span>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Customer Status</span>
+                        <span class="status status-${customer.status}">
+                            ${customer.status.charAt(0).toUpperCase() + customer.status.slice(1)}
+                        </span>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Service Preference</span>
+                        <span class="detail-value" style="text-transform: capitalize;">
+                            🧼 ${customer.preferences.replace('-', ' ')}
+                        </span>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Last Visit</span>
+                        <span class="detail-value">📅 ${utils.formatDate(customer.lastVisit)}</span>
+                    </div>
+                    
+                    <div class="detail-group">
+                        <span class="detail-label">Last Contact</span>
+                        <span class="detail-value">💬 ${this.getLastContactInfo(customer)}</span>
+                    </div>
+                </div>
+                
+                <div class="notes-section">
+                    <h4>Customer Notes</h4>
+                    <div class="notes-list" id="notes-list-${customer.id}">
+                        ${this.renderCustomerNotes(customer.notes || [])}
+                    </div>
+                    <form class="note-form">
+                        <textarea class="note-input" name="note" placeholder="Add a note about this customer..." required></textarea>
+                        <button type="submit" class="btn btn-secondary">
+                            <i class="fas fa-plus"></i> Add Note
+                        </button>
+                    </form>
+                </div>
+                
+                <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn" onclick="crm.editCustomer('${customer.id}')">
+                        <i class="fas fa-edit"></i> Edit Customer
+                    </button>
+                    <button class="btn btn-secondary" onclick="crm.messageCustomer('${customer.id}')">
+                        <i class="fab fa-whatsapp"></i> Send Message
+                    </button>
+                    <button class="btn" onclick="crm.emailCustomer('${customer.id}')" ${!customer.email ? 'disabled' : ''}>
+                        <i class="fas fa-envelope"></i> Send Email
+                    </button>
+                </div>
             </div>
         `;
+        
+        document.body.appendChild(overlay);
+        
+        // Show with animation
+        setTimeout(() => {
+            overlay.classList.add('active');
+            overlay.querySelector('.customer-details-panel').classList.add('active');
+        }, 10);
+        
+        // Bind events
+        this.bindDetailsPanelEvents(overlay, customer.id);
+    },
+
+    bindDetailsPanelEvents: function(overlay, customerId) {
+        // Close button
+        const closeBtn = overlay.querySelector('.close-details');
+        closeBtn.addEventListener('click', () => {
+            this.closeCustomerDetails();
+        });
+        
+        // Overlay click
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                this.closeCustomerDetails();
+            }
+        });
+        
+        // Note form
+        const noteForm = overlay.querySelector('.note-form');
+        noteForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const noteInput = e.target.querySelector('.note-input');
+            if (noteInput && noteInput.value.trim()) {
+                this.addCustomerNote(customerId, noteInput.value.trim());
+                noteInput.value = '';
+                
+                // Update notes list
+                const notesList = overlay.querySelector('.notes-list');
+                const customers = storage.get('customers') || [];
+                const customer = customers.find(c => c.id === customerId);
+                if (customer) {
+                    notesList.innerHTML = this.renderCustomerNotes(customer.notes || []);
+                }
+            }
+        });
+    },
+
+    closeCustomerDetails: function() {
+        const overlay = document.querySelector('.customer-details-overlay');
+        if (overlay) {
+            overlay.querySelector('.customer-details-panel').classList.remove('active');
+            setTimeout(() => {
+                if (overlay.parentNode) {
+                    overlay.parentNode.removeChild(overlay);
+                }
+            }, 300);
+        }
     },
 
     renderCustomerNotes: function(notes) {
@@ -482,7 +535,7 @@ const crm = {
     },
 
     addCustomerNote: function(customerId, content) {
-        const customers = storage.get('customers');
+        const customers = storage.get('customers') || [];
         const customerIndex = customers.findIndex(c => c.id === customerId);
         
         if (customerIndex !== -1) {
@@ -498,40 +551,34 @@ const crm = {
             });
             
             storage.set('customers', customers);
-            this.showCustomerDetails(customers[customerIndex]);
             utils.showToast('Note added successfully!');
         }
     },
 
-    closeCustomerDetails: function() {
-        const detailsPanel = document.querySelector('.customer-details');
-        if (detailsPanel) {
-            detailsPanel.classList.remove('active');
-        }
-    },
-
     messageCustomer: function(customerId) {
-        const customer = storage.get('customers').find(c => c.id === customerId);
+        const customers = storage.get('customers') || [];
+        const customer = customers.find(c => c.id === customerId);
         if (customer) {
             // Update last contact
             this.updateLastContact(customerId);
             
             // Open WhatsApp
             const phone = customer.phone.replace(/\D/g, '');
-            const message = `Hello ${customer.name}, trust you're having a wonderful day `;
+            const message = `Hello ${customer.name}, trust you are having a wonderful day💯... `;
             const encodedMessage = encodeURIComponent(message);
             window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
         }
     },
 
     emailCustomer: function(customerId) {
-        const customer = storage.get('customers').find(c => c.id === customerId);
+        const customers = storage.get('customers') || [];
+        const customer = customers.find(c => c.id === customerId);
         if (customer && customer.email) {
             // Update last contact
             this.updateLastContact(customerId);
             
             const subject = 'De Supreme Laundry House - Customer Service';
-            const body = `Dear ${customer.name},\n\n`;
+            const body = `Dear ${customer.name},\n\nThank you for being our valued customer... Our great pleasure to be of service to you.`;
             window.open(`mailto:${customer.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
         } else {
             utils.showToast('No email address available for this customer');
@@ -539,7 +586,7 @@ const crm = {
     },
 
     updateLastContact: function(customerId) {
-        const customers = storage.get('customers');
+        const customers = storage.get('customers') || [];
         const customerIndex = customers.findIndex(c => c.id === customerId);
         
         if (customerIndex !== -1) {
@@ -550,7 +597,12 @@ const crm = {
     },
 
     exportToExcel: function() {
-        const customers = storage.get('customers');
+        const customers = storage.get('customers') || [];
+        if (customers.length === 0) {
+            utils.showToast('No customer data to export');
+            return;
+        }
+        
         let csvContent = "data:text/csv;charset=utf-8,";
         csvContent += "Name,Phone,Email,Address,Status,Preferences,Last Visit,Last Contact\n";
         
@@ -572,30 +624,33 @@ const crm = {
     handleBulkStatusChange: function(e) {
         const newStatus = e.target.value;
         if (newStatus) {
-            // Implementation for bulk status change
             utils.showToast(`Bulk status change to ${newStatus} would be implemented here`);
             e.target.value = '';
         }
     },
 
     sendBulkMessage: function() {
-        // Implementation for bulk messaging
         utils.showToast('Bulk messaging feature would be implemented here');
     },
 
     updateSelectedCount: function() {
         const selectedCount = document.querySelectorAll('.customer-select:checked').length;
-        document.getElementById('selected-count').textContent = `${selectedCount} selected`;
+        const selectedCountElement = document.getElementById('selected-count');
+        if (selectedCountElement) {
+            selectedCountElement.textContent = `${selectedCount} selected`;
+        }
         
         const bulkStatus = document.getElementById('bulk-status');
         const bulkMessage = document.getElementById('send-bulk-message');
         
-        if (selectedCount > 0) {
-            bulkStatus.style.display = 'inline-block';
-            bulkMessage.style.display = 'inline-block';
-        } else {
-            bulkStatus.style.display = 'none';
-            bulkMessage.style.display = 'none';
+        if (bulkStatus && bulkMessage) {
+            if (selectedCount > 0) {
+                bulkStatus.style.display = 'inline-block';
+                bulkMessage.style.display = 'inline-block';
+            } else {
+                bulkStatus.style.display = 'none';
+                bulkMessage.style.display = 'none';
+            }
         }
     }
 };
