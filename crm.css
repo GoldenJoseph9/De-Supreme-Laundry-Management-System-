@@ -1,0 +1,403 @@
+/* CRM Section */
+.crm-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+.card1 {
+    width: 800px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    padding: 20px;
+    transition: transform 0.3s;
+}
+
+.search-box {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.search-box input {
+    padding: 10px 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    width: 300px;
+    transition: border-color 0.3s;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+}
+
+.customer-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.customer-table th, .customer-table td {
+    padding: 15px;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.customer-table th {
+    background: #f8f9fa;
+    font-weight: 600;
+    color: var(--dark);
+    position: sticky;
+    top: 0;
+}
+
+.customer-table tr:hover {
+    background: #f8f9fa;
+}
+
+.customer-table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Status Badges */
+.status {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-active {
+    background: #e8f6ef;
+    color: var(--secondary);
+    border: 1px solid #d4edda;
+}
+
+.status-inactive {
+    background: #fdeaea;
+    color: var(--accent);
+    border: 1px solid #f8d7da;
+}
+
+.status-premium {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+/* Action Cells */
+.action-cell {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-start;
+}
+
+.action-icon {
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+}
+
+.action-icon:hover {
+    transform: translateY(-2px);
+}
+
+.action-edit {
+    background: #e3f2fd;
+    color: var(--primary);
+}
+
+.action-edit:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.action-message {
+    background: #e8f5e8;
+    color: #25d366;
+}
+
+.action-message:hover {
+    background: #25d366;
+    color: white;
+}
+
+.action-email {
+    background: #fff3e0;
+    color: #ea4335;
+}
+
+.action-email:hover {
+    background: #ea4335;
+    color: white;
+}
+
+.action-delete {
+    background: #ffebee;
+    color: var(--accent);
+}
+
+.action-delete:hover {
+    background: var(--accent);
+    color: white;
+}
+
+/* Customer Details */
+.customer-details {
+    background: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+    display: none;
+}
+
+.customer-details.active {
+    display: block;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.detail-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: var(--dark);
+    font-size: 0.9rem;
+}
+
+.detail-value {
+    color: var(--gray);
+    font-size: 1rem;
+}
+
+/* Notes Section */
+.notes-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.notes-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-bottom: 15px;
+}
+
+.note-item {
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 4px solid var(--primary);
+}
+
+.note-content {
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.note-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--gray);
+}
+
+.note-form {
+    display: flex;
+    gap: 10px;
+}
+
+.note-input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    resize: vertical;
+    min-height: 60px;
+}
+
+/* Filter Section */
+.filter-section {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    align-items: end;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.filter-label {
+    font-weight: 600;
+    color: var(--dark);
+    font-size: 0.9rem;
+}
+
+.filter-select {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background: white;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--gray);
+}
+
+.empty-state i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    color: #ddd;
+}
+
+.empty-state h3 {
+    margin-bottom: 10px;
+    color: var(--dark);
+}
+
+/* Customer Tags */
+.customer-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.tag {
+    padding: 3px 8px;
+    background: #e3f2fd;
+    color: var(--primary);
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+/* Quick Actions */
+.quick-actions-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.bulk-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.select-all {
+    margin-right: 10px;
+    font-size: 0.9rem;
+    color: var(--gray);
+}
+
+/* Responsive CRM */
+@media (max-width: 768px) {
+    .crm-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .search-box {
+        width: 100%;
+    }
+    
+    .search-box input {
+        width: 100%;
+    }
+    
+    .customer-table {
+        font-size: 0.9rem;
+    }
+    
+    .customer-table th,
+    .customer-table td {
+        padding: 10px 8px;
+    }
+    
+    .action-cell {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .action-icon {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .filter-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .action-cell,
+    .search-box,
+    .crm-header .btn {
+        display: none !important;
+    }
+    
+    .customer-table {
+        box-shadow: none;
+    }
+}
