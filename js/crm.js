@@ -518,7 +518,7 @@ const crm = {
             
             // Open WhatsApp
             const phone = customer.phone.replace(/\D/g, '');
-            const message = `Hello ${customer.name}, Hello, trust you're having a wonderful day `;
+            const message = `Hello ${customer.name}, trust you're having a wonderful day `;
             const encodedMessage = encodeURIComponent(message);
             window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
         }
