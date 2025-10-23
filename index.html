@@ -167,89 +167,143 @@
             </div>
             
             <!-- CRM Section -->
-            <div class="section" id="crm">
-                <div class="header">
-                    <h2>Customer Relationship Management</h2>
-                    <div class="user-info">
-                        <img src="https://ui-avatars.com/api/?name=Laundromat+Owner&background=3498db&color=fff" alt="User">
-                        <div>
-                            <h4>Laundromat Owner</h4>
-                            <p>Admin</p>
-                        </div>
-                    </div>
-                </div>
-                
-                
-                <div class="card1">
-                    <div class="crm-header">
-                        <h3>Customer Database</h3>
-                        <div class="search-box">
-                            <input type="text" id="customer-search" placeholder="Search customers...">
-                            <button class="btn btn-secondary" id="add-customer-btn">
-                                <i class="fas fa-plus"></i> Add Customer
-                            </button>
-                            <button class="btn" id="export-crm-btn">
-                                <i class="fas fa-file-export"></i> Export to Excel
-                            </button>
-                        </div>
-                    </div>
-                    <!-- Add to the CRM section, after the crm-header -->
-<div class="filter-section">
-    <div class="filter-grid">
-        <div class="filter-group">
-            <label class="filter-label">Status</label>
-            <select class="filter-select" id="status-filter">
-                <option value="all">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="premium">Premium</option>
-            </select>
-        </div>
-        <div class="filter-group">
-            <label class="filter-label">Service Preference</label>
-            <select class="filter-select" id="preferences-filter">
-                <option value="all">All Preferences</option>
-                <option value="wash-fold">Wash & Fold</option>
-                <option value="dry-cleaning">Dry Cleaning</option>
-                <option value="delivery">Delivery Service</option>
-                <option value="all">All Services</option>
-            </select>
-        </div>
-        <div class="filter-group">
-            <label class="filter-label">Quick Actions</label>
-            <div class="bulk-actions">
-                <span class="select-all" id="selected-count">0 selected</span>
-                <select class="filter-select" id="bulk-status" style="display: none;">
-                    <option value="">Change Status</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="premium">Premium</option>
-                </select>
-                <button class="btn btn-secondary" id="send-bulk-message" style="display: none;">
-                    <i class="fas fa-envelope"></i> Message Selected
-                </button>
+<div class="section" id="crm">
+    <div class="header">
+        <h2>Customer Relationship Management</h2>
+        <div class="user-info">
+            <img src="https://ui-avatars.com/api/?name=Laundromat+Owner&background=3498db&color=fff" alt="User">
+            <div>
+                <h4>Laundromat Owner</h4>
+                <p>Admin</p>
             </div>
         </div>
     </div>
-</div>
-                    
-                    <table class="customer-table">
-                        <thead>
-                            <tr>
-                                <th>Name</th>
-                                <th>Phone</th>
-                                <th>Status</th>
-                                <th>Common Service</th>
-                                <th>Last Visit</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="customer-table-body">
-                            <!-- Customer data will be populated by JavaScript -->
-                        </tbody>
-                    </table>
+    
+    <div class="card1">
+        <div class="crm-header">
+            <h3>Customer Database</h3>
+            <div class="search-box">
+                <input type="text" id="customer-search" placeholder="Search customers...">
+                <button class="btn btn-secondary" id="add-customer-btn">
+                    <i class="fas fa-plus"></i> Add Customer
+                </button>
+                <button class="btn" id="export-crm-btn">
+                    <i class="fas fa-file-export"></i> Export to Excel
+                </button>
+            </div>
+        </div>
+        
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label class="filter-label">Status</label>
+                    <select class="filter-select" id="status-filter">
+                        <option value="all">All Statuses</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="premium">Premium</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Service Preference</label>
+                    <select class="filter-select" id="preferences-filter">
+                        <option value="all">All Preferences</option>
+                        <option value="wash-fold">Wash & Fold</option>
+                        <option value="dry-cleaning">Dry Cleaning</option>
+                        <option value="delivery">Delivery Service</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label class="filter-label">Quick Actions</label>
+                    <div class="bulk-actions">
+                        <span class="select-all" id="selected-count">0 selected</span>
+                        <select class="filter-select" id="bulk-status" style="display: none;">
+                            <option value="">Change Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="premium">Premium</option>
+                        </select>
+                        <button class="btn btn-secondary" id="send-bulk-message" style="display: none;">
+                            <i class="fas fa-envelope"></i> Message Selected
+                        </button>
+                    </div>
                 </div>
             </div>
+        </div>
+        
+        <!-- Customer Table -->
+        <table class="customer-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Status</th>
+                    <th>Common Service</th>
+                    <th>Last Visit</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="customer-table-body">
+                <!-- Customer data will be populated by JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Customer Modal -->
+<div class="modal" id="add-customer-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Add New Customer</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <form id="customer-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="customer-name">Full Name *</label>
+                    <input type="text" class="form-control" id="customer-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="customer-phone">Phone Number *</label>
+                    <input type="tel" class="form-control" id="customer-phone" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="customer-email">Email Address</label>
+                <input type="email" class="form-control" id="customer-email">
+            </div>
+            <div class="form-group">
+                <label for="customer-address">Address</label>
+                <input type="text" class="form-control" id="customer-address" placeholder="Street address, city, state">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="customer-preferences">Service Preferences</label>
+                    <select class="form-control" id="customer-preferences">
+                        <option value="wash-fold">Wash & Fold</option>
+                        <option value="dry-cleaning">Dry Cleaning</option>
+                        <option value="delivery">Delivery Service</option>
+                        <option value="all">All Services</option>
+                    </select>
+                </div>
+                <div class="form-group" style="display: none;" id="status-field">
+                    <label for="customer-status">Status</label>
+                    <select class="form-control" id="customer-status">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="premium">Premium</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-secondary" style="width: 100%;">
+                    <i class="fas fa-save"></i> Save Customer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
             
             <!-- External Service Sections -->
             <div class="section" id="whatsapp">
