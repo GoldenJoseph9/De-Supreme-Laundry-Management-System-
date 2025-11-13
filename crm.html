@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>De Supreme - CRM System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --gray: #95a5a6;
+            --success: #27ae60;
+            --sidebar-width: 260px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Login Styles */
+        .login-modal {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 12px 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 5px 0;
+            transition: all 0.3s;
+        }
+
+        .login-btn.signup {
+            background: var(--success);
+        }
+
+        .login-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--dark);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            overflow-y: auto;
+        }
+
+        .logo {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo h1 {
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 24px;
+            color: var(--primary);
+        }
+
+        .nav-links {
+            list-style: none;
+            padding: 20px 0;
+        }
+
+        .nav-links li {
+            margin-bottom: 5px;
+        }
+
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: var(--light);
+            text-decoration: none;
+            transition: all 0.3s;
+            gap: 10px;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left: 4px solid var(--primary);
+        }
+
+        .nav-links i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .header h2 {
+            color: var(--dark);
+            font-size: 28px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid var(--primary);
+        }
+
+        .user-info h4 {
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .user-info p {
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        .sync-status {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+
+        .sync-online {
+            background: #d5f4e6;
+            color: var(--success);
+        }
+
+        .sync-offline {
+            background: #fdeaea;
+            color: var(--danger);
+        }
+
+        .crm-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            padding: 25px;
+            margin-bottom: 25px;
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box input {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 300px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background: #27ae60;
+        }
+
+        .customer-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .customer-table th, .customer-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .customer-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .customer-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #e8f6ef;
+            color: var(--secondary);
+        }
+
+        .status-inactive {
+            background: #fdeaea;
+            color: var(--danger);
+        }
+
+        .status-premium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .action-cell {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-start;
+        }
+
+        .action-icon {
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            font-size: 0.9rem;
+        }
+
+        .action-icon:hover {
+            transform: translateY(-2px);
+        }
+
+        .action-edit {
+            background: #e3f2fd;
+            color: var(--primary);
+        }
+
+        .action-edit:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .action-message {
+            background: #e8f5e8;
+            color: #25d366;
+        }
+
+        .action-message:hover {
+            background: #25d366;
+            color: white;
+        }
+
+        .action-view {
+            background: #f0f4ff;
+            color: #667eea;
+        }
+
+        .action-view:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--gray);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--dark);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+            
+            .sidebar .logo span,
+            .sidebar .nav-links span {
+                display: none;
+            }
+            
+            .main-content {
+                margin-left: 70px;
+            }
+            
+            .crm-header {
+                flex-direction: column;
+            }
+            
+            .search-box input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Modal -->
+    <div id="login-modal" class="login-modal">
+        <div class="login-content">
+            <h2 style="margin-bottom: 30px; color: var(--dark);">🔐 De Supreme Login</h2>
+            <input type="email" id="login-email" class="login-input" placeholder="Email Address" value="desupremelaundry@gmail.com">
+            <input type="password" id="login-password" class="login-input" placeholder="Password" value="admin123">
+            <button class="login-btn" onclick="authSystem.signIn()">Sign In</button>
+            <button class="login-btn signup" onclick="authSystem.signUp()">Create New Account</button>
+            <div id="login-error" style="color: var(--danger); margin-top: 15px; display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Main App Content -->
+    <div id="app-content" style="display: none;">
+        <div class="container">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="logo">
+                    <h1><i class="fas fa-tshirt"></i><span>De Supreme Laundry House</span></h1>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="index.html"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+                    <li><a href="#" class="active"><i class="fas fa-users"></i> <span>Customer CRM</span></a></li>
+                    <li><a href="https://wa.me/2349043930196" target="_blank"><i class="fab fa-whatsapp"></i> <span>WhatsApp Business</span></a></li>
+                    <li><a href="https://www.facebook.com/share/1bK1uNXQN3/" target="_blank"><i class="fab fa-facebook"></i> <span>Facebook Page</span></a></li>
+                    <li><a href="https://share.google/qjpMmSaMOEqPlct1E" target="_blank"><i class="fab fa-google"></i> <span>Google My Business</span></a></li>
+                    <li><a href="finance.html"><i class="fas fa-chart-line"></i> <span>Financial Reports</span></a></li>
+                    <li><a href="scheduling.html"><i class="fas fa-calendar-alt"></i> <span>Scheduling</span></a></li>
+                    <li><a href="marketing.html"><i class="fas fa-bullhorn"></i> <span>Marketing Content</span></a></li>
+                    <li><a href="systems.html"><i class="fas fa-cogs"></i> <span>Business Systems</span></a></li>
+                    <li><a href="#" onclick="authSystem.signOut()"><i class="fas fa-sign-out-alt"></i> <span>Sign Out</span></a></li>
+                </ul>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="main-content">
+                <div class="header">
+                    <h2>Customer Relationship Management</h2>
+                    <div class="user-info">
+                        <img src="https://ui-avatars.com/api/?name=Laundromat+Owner&background=3498db&color=fff" alt="User">
+                        <div>
+                            <h4 id="user-display-name">Laundromat Owner</h4>
+                            <p>Admin</p>
+                            <div id="sync-status" class="sync-status sync-offline">🔄 Connecting to Firebase...</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Stats -->
+                <div class="dashboard-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 25px;">
+                    <div class="card">
+                        <div class="stat-value" id="total-customers">0</div>
+                        <div class="stat-label">Total Customers</div>
+                    </div>
+                    <div class="card">
+                        <div class="stat-value" id="active-customers">0</div>
+                        <div class="stat-label">Active Customers</div>
+                    </div>
+                    <div class="card">
+                        <div class="stat-value" id="new-this-month">0</div>
+                        <div class="stat-label">New This Month</div>
+                    </div>
+                    <div class="card">
+                        <div class="stat-value" id="premium-customers">0</div>
+                        <div class="stat-label">Premium Customers</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="crm-header">
+                        <h3>Customer Database</h3>
+                        <div class="search-box">
+                            <input type="text" id="customer-search" placeholder="Search customers...">
+                            <button class="btn btn-secondary" id="add-customer-btn">
+                                <i class="fas fa-plus"></i> Add Customer
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Customer Table -->
+                    <table class="customer-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Status</th>
+                                <th>Service</th>
+                                <th>Last Visit</th>
+                                <th>Total Spent</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customer-table-body">
+                            <tr>
+                                <td colspan="7" class="empty-state">
+                                    <i class="fas fa-users"></i>
+                                    <h3>No Customers Found</h3>
+                                    <p>Get started by adding your first customer</p>
+                                    <button class="btn btn-secondary" id="add-first-customer">
+                                        <i class="fas fa-plus"></i> Add First Customer
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Customer Modal -->
+    <div class="modal" id="add-customer-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Customer</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <form id="customer-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="customer-name">Full Name *</label>
+                        <input type="text" class="form-control" id="customer-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-phone">Phone Number *</label>
+                        <input type="tel" class="form-control" id="customer-phone" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="customer-email">Email Address</label>
+                    <input type="email" class="form-control" id="customer-email">
+                </div>
+                <div class="form-group">
+                    <label for="customer-address">Address</label>
+                    <input type="text" class="form-control" id="customer-address" placeholder="Street address, city, state">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="customer-preferences">Service Preferences</label>
+                        <select class="form-control" id="customer-preferences">
+                            <option value="wash-fold">Wash & Fold</option>
+                            <option value="dry-cleaning">Dry Cleaning</option>
+                            <option value="delivery">Delivery Service</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="customer-status">Status</label>
+                        <select class="form-control" id="customer-status">
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="premium">Premium</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <button type="submit" class="btn btn-secondary" style="width: 100%;">
+                        <i class="fas fa-save"></i> Save Customer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB5duUDZTcu6eXJg8kB3Ciew2im4TMPc7Y",
+            authDomain: "trust-corp.firebaseapp.com",
+            databaseURL: "https://trust-corp-default-rtdb.firebaseio.com",
+            projectId: "trust-corp",
+            storageBucket: "trust-corp.firebasestorage.app",
+            messagingSenderId: "364233006581",
+            appId: "1:364233006581:web:fe030429cd5c7814a8d4bc",
+            measurementId: "G-V7TGLF03R8"
+        };
+
+        // Initialize Firebase
+        let database, auth;
+        try {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            database = firebase.database();
+            auth = firebase.auth();
+        } catch (error) {
+            console.error('Firebase initialization failed:', error);
+        }
+
+        // Authentication System
+        const authSystem = {
+            currentUser: null,
+            isOnline: navigator.onLine,
+
+            init() {
+                this.setupAuthListener();
+                this.setupConnectivityListener();
+            },
+
+            setupAuthListener() {
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        this.currentUser = user;
+                        this.handleUserSignedIn(user);
+                        this.ensureUserProfile(user);
+                    } else {
+                        this.handleUserSignedOut();
+                    }
+                });
+            },
+
+            ensureUserProfile(user) {
+                const userProfilePath = `laundromat/users/${user.uid}`;
+                
+                database.ref(userProfilePath).once('value')
+                    .then((snapshot) => {
+                        if (!snapshot.exists()) {
+                            const userProfile = {
+                                email: user.email,
+                                name: user.email.split('@')[0],
+                                role: 'admin',
+                                createdAt: new Date().toISOString(),
+                                lastLogin: new Date().toISOString()
+                            };
+                            
+                            return database.ref(userProfilePath).set(userProfile);
+                        } else {
+                            return database.ref(`${userProfilePath}/lastLogin`).set(new Date().toISOString());
+                        }
+                    })
+                    .catch((error) => {
+                        console.error('User profile setup failed:', error);
+                    });
+            },
+
+            handleUserSignedIn(user) {
+                document.getElementById('login-modal').style.display = 'none';
+                document.getElementById('app-content').style.display = 'block';
+                document.getElementById('user-display-name').textContent = user.email.split('@')[0];
+                this.updateSyncStatus('🟢 Online - Firebase Connected');
+                this.showToast(`Welcome back, ${user.email.split('@')[0]}!`, 'success');
+                
+                setTimeout(() => {
+                    crmSystem.init();
+                }, 500);
+            },
+
+            handleUserSignedOut() {
+                document.getElementById('login-modal').style.display = 'flex';
+                document.getElementById('app-content').style.display = 'none';
+            },
+
+            async signIn() {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                const errorElement = document.getElementById('login-error');
+                
+                if (!email || !password) {
+                    errorElement.textContent = 'Please enter both email and password';
+                    errorElement.style.display = 'block';
+                    return;
+                }
+                
+                try {
+                    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                    errorElement.style.display = 'none';
+                } catch (error) {
+                    errorElement.textContent = 'Login failed: ' + error.message;
+                    errorElement.style.display = 'block';
+                }
+            },
+
+            async signUp() {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                const errorElement = document.getElementById('login-error');
+                
+                if (!email || !password) {
+                    errorElement.textContent = 'Please enter both email and password';
+                    errorElement.style.display = 'block';
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    errorElement.textContent = 'Password should be at least 6 characters';
+                    errorElement.style.display = 'block';
+                    return;
+                }
+                
+                try {
+                    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+                    errorElement.style.display = 'none';
+                    this.showToast('Account created successfully!', 'success');
+                } catch (error) {
+                    errorElement.textContent = 'Sign up failed: ' + error.message;
+                    errorElement.style.display = 'block';
+                }
+            },
+
+            async signOut() {
+                try {
+                    await auth.signOut();
+                    this.showToast('Signed out successfully', 'success');
+                } catch (error) {
+                    console.error('Sign out error:', error);
+                }
+            },
+
+            setupConnectivityListener() {
+                window.addEventListener('online', () => {
+                    this.isOnline = true;
+                    this.updateSyncStatus('🟢 Online - Firebase Connected');
+                });
+                
+                window.addEventListener('offline', () => {
+                    this.isOnline = false;
+                    this.updateSyncStatus('🔴 Offline - Using Local Storage');
+                });
+            },
+
+            updateSyncStatus(status) {
+                const element = document.getElementById('sync-status');
+                if (element) {
+                    element.textContent = status;
+                    if (status.includes('Online')) {
+                        element.className = 'sync-status sync-online';
+                    } else {
+                        element.className = 'sync-status sync-offline';
+                    }
+                }
+            },
+
+            showToast(message, type = 'info') {
+                const toast = document.getElementById('toast');
+                toast.textContent = message;
+                toast.className = 'toast';
+                
+                if (type === 'success') {
+                    toast.style.background = 'var(--success)';
+                } else if (type === 'error') {
+                    toast.style.background = 'var(--danger)';
+                }
+                
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 3000);
+            }
+        };
+
+        // User-Based CRM System
+        const crmSystem = {
+            currentCustomer: null,
+            customers: [],
+            databasePath: '',
+
+            init() {
+                if (!authSystem.currentUser) {
+                    return;
+                }
+                
+                this.databasePath = `laundromat/users/${authSystem.currentUser.uid}/customers`;
+                this.bindEvents();
+                this.loadCustomers();
+            },
+
+            bindEvents() {
+                document.getElementById('add-customer-btn').addEventListener('click', () => {
+                    this.openCustomerModal();
+                });
+
+                document.getElementById('add-first-customer').addEventListener('click', () => {
+                    this.openCustomerModal();
+                });
+
+                document.getElementById('customer-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleCustomerFormSubmit();
+                });
+
+                document.querySelector('.close-modal').addEventListener('click', () => {
+                    this.closeCustomerModal();
+                });
+
+                document.getElementById('add-customer-modal').addEventListener('click', (e) => {
+                    if (e.target === e.currentTarget) {
+                        this.closeCustomerModal();
+                    }
+                });
+
+                document.getElementById('customer-search').addEventListener('input', (e) => {
+                    this.searchCustomers(e.target.value);
+                });
+            },
+
+            loadCustomers() {
+                if (!authSystem.currentUser) {
+                    this.showAuthError();
+                    return;
+                }
+
+                database.ref(this.databasePath).once('value')
+                    .then((snapshot) => {
+                        const customersData = snapshot.val();
+                        
+                        if (customersData) {
+                            this.customers = Object.values(customersData).filter(customer => customer !== null);
+                        } else {
+                            this.customers = [];
+                        }
+                        
+                        this.updateStats();
+                        this.renderCustomerTable(this.customers);
+                    })
+                    .catch((error) => {
+                        authSystem.showToast('Error loading customers', 'error');
+                        this.showDatabaseError(error);
+                    });
+            },
+
+            showDatabaseError(error) {
+                const tbody = document.getElementById('customer-table-body');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i>
+                            <h3>Database Access Error</h3>
+                            <p>${error.message}</p>
+                            <button class="btn" style="background: #3498db;" onclick="authSystem.signIn()">
+                                <i class="fas fa-sign-in-alt"></i> Sign In Again
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            },
+
+            showAuthError() {
+                const tbody = document.getElementById('customer-table-body');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <i class="fas fa-user-slash" style="color: #e74c3c;"></i>
+                            <h3>Authentication Required</h3>
+                            <p>Please sign in to access customer data</p>
+                            <button class="btn" style="background: #3498db;" onclick="authSystem.signIn()">
+                                <i class="fas fa-sign-in-alt"></i> Sign In
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            },
+
+            openCustomerModal(customer = null) {
+                this.currentCustomer = customer;
+                const modal = document.getElementById('add-customer-modal');
+                const form = document.getElementById('customer-form');
+                
+                if (customer) {
+                    modal.querySelector('h3').textContent = 'Edit Customer';
+                    this.populateForm(customer);
+                } else {
+                    modal.querySelector('h3').textContent = 'Add New Customer';
+                    form.reset();
+                }
+                
+                modal.style.display = 'flex';
+            },
+
+            closeCustomerModal() {
+                document.getElementById('add-customer-modal').style.display = 'none';
+                this.currentCustomer = null;
+            },
+
+            populateForm(customer) {
+                document.getElementById('customer-name').value = customer.name;
+                document.getElementById('customer-phone').value = customer.phone;
+                document.getElementById('customer-email').value = customer.email || '';
+                document.getElementById('customer-address').value = customer.address || '';
+                document.getElementById('customer-preferences').value = customer.preferences;
+                document.getElementById('customer-status').value = customer.status;
+            },
+
+            handleCustomerFormSubmit() {
+                const customerData = {
+                    name: document.getElementById('customer-name').value,
+                    phone: document.getElementById('customer-phone').value,
+                    email: document.getElementById('customer-email').value,
+                    address: document.getElementById('customer-address').value,
+                    preferences: document.getElementById('customer-preferences').value,
+                    status: document.getElementById('customer-status').value,
+                    lastVisit: new Date().toISOString().split('T')[0],
+                    lastContact: new Date().toISOString(),
+                    createdAt: this.currentCustomer ? this.currentCustomer.createdAt : new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    totalSpent: this.currentCustomer ? this.currentCustomer.totalSpent || 0 : 0,
+                    visitCount: this.currentCustomer ? this.currentCustomer.visitCount || 0 : 0,
+                    createdBy: authSystem.currentUser.uid
+                };
+
+                if (this.currentCustomer) {
+                    this.updateCustomer(this.currentCustomer.id, customerData);
+                } else {
+                    this.addCustomer(customerData);
+                }
+            },
+
+            addCustomer(customerData) {
+                const customerId = 'cust-' + Date.now();
+                const newCustomer = {
+                    id: customerId,
+                    ...customerData
+                };
+
+                database.ref(this.databasePath).child(customerId).set(newCustomer)
+                    .then(() => {
+                        authSystem.showToast('Customer added successfully!', 'success');
+                        this.closeCustomerModal();
+                        this.loadCustomers();
+                    })
+                    .catch((error) => {
+                        authSystem.showToast('Error adding customer: ' + error.message, 'error');
+                    });
+            },
+
+            updateCustomer(customerId, customerData) {
+                database.ref(this.databasePath).child(customerId).update(customerData)
+                    .then(() => {
+                        authSystem.showToast('Customer updated successfully!', 'success');
+                        this.closeCustomerModal();
+                        this.loadCustomers();
+                    })
+                    .catch((error) => {
+                        authSystem.showToast('Error updating customer: ' + error.message, 'error');
+                    });
+            },
+
+            updateStats() {
+                const total = this.customers.length;
+                const active = this.customers.filter(c => c.status === 'active').length;
+                const premium = this.customers.filter(c => c.status === 'premium').length;
+                
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                const newThisMonth = this.customers.filter(c => {
+                    if (!c.createdAt) return false;
+                    const createdDate = new Date(c.createdAt);
+                    return createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear;
+                }).length;
+
+                document.getElementById('total-customers').textContent = total;
+                document.getElementById('active-customers').textContent = active;
+                document.getElementById('new-this-month').textContent = newThisMonth;
+                document.getElementById('premium-customers').textContent = premium;
+            },
+
+            renderCustomerTable(customers) {
+                const tbody = document.getElementById('customer-table-body');
+                
+                if (customers.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="empty-state">
+                                <i class="fas fa-users"></i>
+                                <h3>No Customers Found</h3>
+                                <p>Get started by adding your first customer</p>
+                                <button class="btn btn-secondary" onclick="crmSystem.openCustomerModal()">
+                                    <i class="fas fa-plus"></i> Add First Customer
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                tbody.innerHTML = customers.map(customer => `
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600;">${this.escapeHtml(customer.name)}</div>
+                            <div style="font-size: 0.8rem; color: var(--gray);">${this.escapeHtml(customer.email || 'No email')}</div>
+                        </td>
+                        <td>${this.escapeHtml(customer.phone)}</td>
+                        <td>
+                            <span class="status status-${customer.status}">
+                                ${customer.status.charAt(0).toUpperCase() + customer.status.slice(1)}
+                            </span>
+                        </td>
+                        <td style="text-transform: capitalize;">${this.escapeHtml(customer.preferences.replace('-', ' '))}</td>
+                        <td>${this.formatDate(customer.lastVisit)}</td>
+                        <td>₦${customer.totalSpent ? customer.totalSpent.toLocaleString() : '0'}</td>
+                        <td class="action-cell">
+                            <i class="fas fa-edit action-icon action-edit" 
+                               onclick="crmSystem.editCustomer('${customer.id}')" 
+                               title="Edit Customer"></i>
+                            <i class="fab fa-whatsapp action-icon action-message" 
+                               onclick="crmSystem.messageCustomer('${customer.phone}')" 
+                               title="Message on WhatsApp"></i>
+                            <i class="fas fa-chart-line action-icon action-view" 
+                               onclick="crmSystem.viewCustomerHistory('${customer.id}')" 
+                               title="View History"></i>
+                        </td>
+                    </tr>
+                `).join('');
+            },
+
+            editCustomer(customerId) {
+                const customer = this.customers.find(c => c.id === customerId);
+                if (customer) {
+                    this.openCustomerModal(customer);
+                }
+            },
+
+            messageCustomer(phone) {
+                const message = "Hello! This is De Supreme Laundry House. How can we assist you today?";
+                const encodedMessage = encodeURIComponent(message);
+                window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodedMessage}`, '_blank');
+            },
+
+            viewCustomerHistory(customerId) {
+                authSystem.showToast('Customer history feature coming soon!', 'info');
+            },
+
+            searchCustomers(query) {
+                if (!query) {
+                    this.renderCustomerTable(this.customers);
+                    return;
+                }
+                
+                const filtered = this.customers.filter(customer => 
+                    customer.name.toLowerCase().includes(query.toLowerCase()) ||
+                    customer.phone.includes(query) ||
+                    (customer.email && customer.email.toLowerCase().includes(query.toLowerCase()))
+                );
+                this.renderCustomerTable(filtered);
+            },
+
+            formatDate(dateString) {
+                if (!dateString) return 'Never';
+                try {
+                    return new Date(dateString).toLocaleDateString();
+                } catch (e) {
+                    return 'Invalid Date';
+                }
+            },
+
+            escapeHtml(unsafe) {
+                if (!unsafe) return '';
+                return unsafe
+                    .toString()
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+        };
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            authSystem.init();
+        });
+
+        // Close modals when clicking X
+        document.querySelectorAll('.close-modal').forEach(button => {
+            button.addEventListener('click', function() {
+                this.closest('.modal').style.display = 'none';
+            });
+        });
+
+        // Close modals when clicking outside
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.style.display = 'none';
+                }
+            });
+        });
+
+        // Global functions for HTML onclick
+        window.authSystem = authSystem;
+        window.crmSystem = crmSystem;
+    </script>
+</body>
+</html>

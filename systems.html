@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Documentation System</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --gray: #95a5a6;
+            --sidebar-width: 250px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--dark);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            overflow-y: auto;
+            transition: all 0.3s;
+        }
+
+        .logo {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo h1 {
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 24px;
+            color: var(--primary);
+        }
+
+        .nav-links {
+            list-style: none;
+            padding: 20px 0;
+        }
+
+        .nav-links li {
+            margin-bottom: 5px;
+        }
+
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: var(--light);
+            text-decoration: none;
+            transition: all 0.3s;
+            gap: 10px;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left: 4px solid var(--primary);
+        }
+
+        .nav-links i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+        }
+
+        /* Header Styles */
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .header h1 {
+            color: var(--dark);
+            margin-bottom: 5px;
+            font-size: 24px;
+        }
+
+        .header p {
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid var(--primary);
+        }
+
+        /* Button Styles */
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background: #27ae60;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-small {
+            padding: 6px 10px;
+            font-size: 12px;
+            border-radius: 4px;
+        }
+
+        /* Main Content Layout */
+        .content-area {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+
+        /* Document List */
+        .documents-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .documents-panel h2 {
+            color: var(--dark);
+            margin-bottom: 15px;
+            font-size: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .documents-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .document-item {
+            padding: 12px;
+            border-radius: 6px;
+            background: var(--light);
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+            position: relative;
+        }
+
+        .document-item:hover {
+            background: #e0e7f1;
+            transform: translateX(5px);
+        }
+
+        .document-item.active {
+            border-left-color: var(--primary);
+            background: #e0e7f1;
+        }
+
+        .document-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--dark);
+            padding-right: 80px;
+        }
+
+        .document-meta {
+            font-size: 12px;
+            color: var(--gray);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .document-actions {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .document-item:hover .document-actions {
+            opacity: 1;
+        }
+
+        /* Document Editor */
+        .editor-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .editor-header h2 {
+            color: var(--dark);
+            font-size: 18px;
+        }
+
+        .editor-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        textarea.form-control {
+            resize: vertical;
+            min-height: 300px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.5;
+        }
+
+        /* Login Modal */
+        .login-modal {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 12px 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 5px 0;
+        }
+
+        .login-btn.signup {
+            background: var(--secondary);
+        }
+
+        .login-btn:hover {
+            opacity: 0.9;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--dark);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--gray);
+        }
+
+        .empty-state i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        /* Quick Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--dark);
+            margin: 5px 0;
+        }
+
+        .stat-label {
+            color: var(--gray);
+            font-size: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+            
+            .sidebar .logo span,
+            .sidebar .nav-links span {
+                display: none;
+            }
+            
+            .main-content {
+                margin-left: 70px;
+            }
+            
+            .content-area {
+                grid-template-columns: 1fr;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .editor-actions {
+                flex-direction: column;
+            }
+            
+            .document-actions {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Modal -->
+    <div id="login-modal" class="login-modal">
+        <div class="login-content">
+            <h2 style="margin-bottom: 20px; color: var(--dark);">🔐 Business Systems Login</h2>
+            <input type="email" id="login-email" class="login-input" placeholder="Email Address">
+            <input type="password" id="login-password" class="login-input" placeholder="Password">
+            <button class="login-btn" onclick="docSystem.signIn()">Sign In</button>
+            <button class="login-btn signup" onclick="docSystem.signUp()">Create New Account</button>
+            <div id="login-error" style="color: var(--danger); margin-top: 15px; display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Main App Content (Hidden until authenticated) -->
+    <div id="app-content" style="display: none;">
+        <div class="container">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="logo">
+                    <h1><i class="fas fa-cogs"></i><span>Business Systems</span></h1>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="index.html"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+                    <li><a href="crm.html"><i class="fas fa-users"></i> <span>Customer CRM</span></a></li>
+                    <li><a href="https://wa.me/2349043930196" target="_blank"><i class="fab fa-whatsapp"></i> <span>WhatsApp Business</span></a></li>
+                    <li><a href="https://www.facebook.com/share/1bK1uNXQN3/" target="_blank"><i class="fab fa-facebook"></i> <span>Facebook Page</span></a></li>
+                    <li><a href="https://share.google/qjpMmSaMOEqPlct1E" target="_blank"><i class="fab fa-google"></i> <span>Google My Business</span></a></li>
+                    <li><a href="finance.html"><i class="fas fa-chart-line"></i> <span>Financial Reports</span></a></li>
+                    <li><a href="scheduling.html"><i class="fas fa-calendar-alt"></i> <span>Scheduling</span></a></li>
+                    <li><a href="marketing.html"><i class="fas fa-bullhorn"></i> <span>Marketing Content</span></a></li>
+                    <li><a href="#" class="active"><i class="fas fa-cogs"></i> <span>Business Systems</span></a></li>
+                    <li><a href="#" onclick="docSystem.signOut()"><i class="fas fa-sign-out-alt"></i> <span>Sign Out</span></a></li>
+                </ul>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Header -->
+                <div class="header">
+                    <div>
+                        <h1>📚 Business Documentation</h1>
+                        <p>Create and manage your business documents</p>
+                    </div>
+                    <div class="user-info">
+                        <img src="https://ui-avatars.com/api/?name=User&background=3498db&color=fff" alt="User">
+                        <div>
+                            <h4 id="user-display-name">User</h4>
+                            <p id="sync-status">Connecting...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="total-documents">0</div>
+                        <div class="stat-label">Total Documents</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="recent-updates">0</div>
+                        <div class="stat-label">Recent Updates</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="user-count">1</div>
+                        <div class="stat-label">Active Users</div>
+                    </div>
+                </div>
+
+                <!-- Content Area -->
+                <div class="content-area">
+                    <!-- Document List -->
+                    <div class="documents-panel">
+                        <h2>
+                            Your Documents
+                            <button class="btn btn-secondary" onclick="docSystem.createNewDocument()">
+                                <i class="fas fa-plus"></i> New
+                            </button>
+                        </h2>
+                        <div class="documents-list" id="documents-list">
+                            <div class="empty-state">
+                                <i class="fas fa-file-alt"></i>
+                                <p>No documents yet</p>
+                                <button class="btn btn-secondary" onclick="docSystem.createNewDocument()" style="margin-top: 10px;">
+                                    Create Your First Document
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Document Editor -->
+                    <div class="editor-panel">
+                        <div class="editor-header">
+                            <h2 id="editor-title">Create New Document</h2>
+                            <div class="editor-actions">
+                                <button class="btn" onclick="docSystem.createNewDocument()">
+                                    <i class="fas fa-file"></i> New
+                                </button>
+                                <button class="btn btn-secondary" onclick="docSystem.saveDocument()">
+                                    <i class="fas fa-save"></i> Save
+                                </button>
+                                <button class="btn btn-danger" id="delete-btn" style="display: none;" onclick="docSystem.deleteDocument()">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <form id="document-form">
+                            <div class="form-group">
+                                <label for="document-title">Document Title</label>
+                                <input type="text" class="form-control" id="document-title" required 
+                                       placeholder="Enter document title...">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="document-content">Content</label>
+                                <textarea class="form-control" id="document-content" rows="15" required 
+                                          placeholder="Write your document content here..."></textarea>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notification -->
+        <div class="toast" id="toast"></div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB5duUDZTcu6eXJg8kB3Ciew2im4TMPc7Y",
+            authDomain: "trust-corp.firebaseapp.com",
+            databaseURL: "https://trust-corp-default-rtdb.firebaseio.com",
+            projectId: "trust-corp",
+            storageBucket: "trust-corp.firebasestorage.app",
+            messagingSenderId: "364233006581",
+            appId: "1:364233006581:web:fe030429cd5c7814a8d4bc",
+            measurementId: "G-V7TGLF03R8"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const database = firebase.database();
+        const auth = firebase.auth();
+
+        const docSystem = {
+            currentUser: null,
+            currentDocumentId: null,
+            documents: {},
+
+            init() {
+                console.log('📚 Initializing Document System...');
+                this.setupAuthListener();
+                this.setupFormHandlers();
+            },
+
+            setupAuthListener() {
+                auth.onAuthStateChanged((user) => {
+                    console.log('🔐 Auth state changed:', user ? 'User signed in' : 'User signed out');
+                    if (user) {
+                        this.currentUser = user;
+                        console.log('✅ User details:', { email: user.email, uid: user.uid });
+                        this.handleUserSignedIn(user);
+                    } else {
+                        this.handleUserSignedOut();
+                    }
+                });
+            },
+
+            handleUserSignedIn(user) {
+                console.log('✅ User signed in:', user.email);
+                document.getElementById('login-modal').style.display = 'none';
+                document.getElementById('app-content').style.display = 'block';
+                document.getElementById('user-display-name').textContent = user.email.split('@')[0];
+                document.getElementById('sync-status').textContent = '🟢 Online';
+                this.showToast(`Welcome to Business Systems, ${user.email.split('@')[0]}!`, 'success');
+                this.loadDocuments();
+            },
+
+            handleUserSignedOut() {
+                document.getElementById('login-modal').style.display = 'flex';
+                document.getElementById('app-content').style.display = 'none';
+            },
+
+            async signIn() {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                const errorElement = document.getElementById('login-error');
+                
+                if (!email || !password) {
+                    errorElement.textContent = 'Please enter both email and password';
+                    errorElement.style.display = 'block';
+                    return;
+                }
+                
+                try {
+                    await auth.signInWithEmailAndPassword(email, password);
+                    errorElement.style.display = 'none';
+                } catch (error) {
+                    errorElement.textContent = 'Login failed: ' + error.message;
+                    errorElement.style.display = 'block';
+                }
+            },
+
+            async signUp() {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                const errorElement = document.getElementById('login-error');
+                
+                if (!email || !password) {
+                    errorElement.textContent = 'Please enter both email and password';
+                    errorElement.style.display = 'block';
+                    return;
+                }
+                
+                try {
+                    await auth.createUserWithEmailAndPassword(email, password);
+                    errorElement.style.display = 'none';
+                    this.showToast('Account created successfully!', 'success');
+                } catch (error) {
+                    errorElement.textContent = 'Sign up failed: ' + error.message;
+                    errorElement.style.display = 'block';
+                }
+            },
+
+            async signOut() {
+                try {
+                    await auth.signOut();
+                    this.showToast('Signed out successfully', 'success');
+                } catch (error) {
+                    console.error('Sign out error:', error);
+                }
+            },
+
+            showToast(message, type = 'info') {
+                const toast = document.getElementById('toast');
+                if (!toast) return;
+                
+                toast.textContent = message;
+                toast.className = 'toast';
+                
+                if (type === 'success') {
+                    toast.style.background = 'var(--secondary)';
+                } else if (type === 'error') {
+                    toast.style.background = 'var(--danger)';
+                } else {
+                    toast.style.background = 'var(--dark)';
+                }
+                
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 3000);
+            },
+
+            setupFormHandlers() {
+                const documentForm = document.getElementById('document-form');
+                if (documentForm) {
+                    documentForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.saveDocument();
+                    });
+                }
+            },
+
+            loadDocuments() {
+                console.log('📚 Loading documents from: laundromat/businessDocuments');
+                
+                if (!this.currentUser) {
+                    console.error('❌ User not authenticated');
+                    this.showToast('Please sign in to access documents', 'error');
+                    return;
+                }
+
+                database.ref('laundromat/businessDocuments').on('value', (snapshot) => {
+                    const documents = snapshot.val();
+                    console.log('📦 Raw documents data:', documents);
+                    
+                    if (documents && typeof documents === 'object') {
+                        console.log(`📄 Found ${Object.keys(documents).length} documents`);
+                        this.documents = documents;
+                        this.updateDocumentsList(documents);
+                        this.updateStats(documents);
+                    } else {
+                        console.log('ℹ️ No documents found in database');
+                        this.documents = {};
+                        this.updateDocumentsList({});
+                        this.updateStats({});
+                    }
+                }, (error) => {
+                    console.error('❌ Error loading documents:', error);
+                    this.showToast('Error loading documents: ' + error.message, 'error');
+                });
+            },
+
+            updateDocumentsList(documents) {
+                const documentsList = document.getElementById('documents-list');
+                if (!documentsList) return;
+                
+                if (!documents || Object.keys(documents).length === 0) {
+                    documentsList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-file-alt"></i>
+                            <p>No documents yet</p>
+                            <button class="btn btn-secondary" onclick="docSystem.createNewDocument()" style="margin-top: 10px;">
+                                Create Your First Document
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const documentsArray = Object.entries(documents)
+                    .map(([id, doc]) => ({
+                        id: id,
+                        ...doc
+                    }))
+                    .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0));
+
+                documentsList.innerHTML = documentsArray.map(doc => `
+                    <div class="document-item ${this.currentDocumentId === doc.id ? 'active' : ''}" onclick="docSystem.editDocument('${doc.id}')">
+                        <div class="document-title">${doc.title || 'Untitled'}</div>
+                        <div class="document-meta">
+                            <span>${this.formatDate(doc.updatedAt || doc.createdAt || new Date().toISOString())}</span>
+                            <span>${this.formatRelativeDate(doc.updatedAt || doc.createdAt || new Date().toISOString())}</span>
+                        </div>
+                        <div class="document-actions">
+                            <button class="btn btn-small" onclick="event.stopPropagation(); docSystem.editDocument('${doc.id}')">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="btn btn-small btn-danger" onclick="event.stopPropagation(); docSystem.deleteDocument('${doc.id}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            updateStats(documents) {
+                if (!documents || typeof documents !== 'object') {
+                    documents = {};
+                }
+
+                const documentsArray = Object.values(documents);
+                
+                document.getElementById('total-documents').textContent = documentsArray.length;
+                
+                const weekAgo = new Date();
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                const recentUpdates = documentsArray.filter(doc => {
+                    const updateDate = new Date(doc.updatedAt || doc.createdAt || 0);
+                    return updateDate > weekAgo;
+                }).length;
+                document.getElementById('recent-updates').textContent = recentUpdates;
+            },
+
+            createNewDocument() {
+                this.currentDocumentId = null;
+                document.getElementById('editor-title').textContent = 'Create New Document';
+                document.getElementById('delete-btn').style.display = 'none';
+                
+                // Clear the form
+                document.getElementById('document-title').value = '';
+                document.getElementById('document-content').value = '';
+                
+                // Update active state in document list
+                this.updateDocumentsList(this.documents);
+                
+                this.showToast('Ready to create new document', 'success');
+            },
+
+            editDocument(documentId) {
+                if (!this.currentUser) {
+                    this.showToast('Please sign in to edit documents', 'error');
+                    return;
+                }
+
+                console.log('✏️ Editing document:', documentId);
+                console.log('Available documents:', this.documents);
+                
+                // FIXED: Use docData instead of document to avoid variable name conflict
+                const docData = this.documents[documentId];
+                if (docData) {
+                    this.currentDocumentId = documentId;
+                    document.getElementById('editor-title').textContent = 'Edit Document';
+                    document.getElementById('delete-btn').style.display = 'inline-flex';
+                    
+                    // Populate the form with document data
+                    document.getElementById('document-title').value = docData.title || '';
+                    document.getElementById('document-content').value = docData.content || '';
+                    
+                    // Update active state in document list
+                    this.updateDocumentsList(this.documents);
+                    
+                    this.showToast('Document loaded for editing', 'success');
+                } else {
+                    console.error('❌ Document not found:', documentId);
+                    console.error('Available document IDs:', Object.keys(this.documents));
+                    this.showToast('Document not found', 'error');
+                }
+            },
+
+            saveDocument() {
+                const getValue = (id) => {
+                    const element = document.getElementById(id);
+                    return element ? element.value.trim() : '';
+                };
+
+                const title = getValue('document-title');
+                const content = getValue('document-content');
+
+                if (!title || !content) {
+                    this.showToast('Please fill in all fields', 'error');
+                    return;
+                }
+
+                if (!this.currentUser) {
+                    this.showToast('Please sign in to save documents', 'error');
+                    return;
+                }
+
+                const documentData = {
+                    title: title,
+                    content: content,
+                    updatedAt: new Date().toISOString(),
+                    createdBy: this.currentUser.uid,
+                    userEmail: this.currentUser.email
+                };
+
+                console.log('💾 Saving document to: laundromat/businessDocuments');
+
+                if (this.currentDocumentId) {
+                    // Update existing document
+                    database.ref(`laundromat/businessDocuments/${this.currentDocumentId}`).update(documentData)
+                    .then(() => {
+                        console.log('✅ Document updated successfully');
+                        this.showToast('Document updated successfully!', 'success');
+                        this.loadDocuments(); // Reload to show updated timestamp
+                    })
+                    .catch(error => {
+                        console.error('❌ Error updating document:', error);
+                        this.showToast('Error updating document: ' + error.message, 'error');
+                    });
+                } else {
+                    // Create new document
+                    const documentId = 'doc-' + Date.now();
+                    const newDocument = {
+                        ...documentData,
+                        createdAt: new Date().toISOString()
+                    };
+
+                    database.ref(`laundromat/businessDocuments/${documentId}`).set(newDocument)
+                    .then(() => {
+                        console.log('✅ Document created successfully with ID:', documentId);
+                        this.showToast('Document created successfully!', 'success');
+                        this.currentDocumentId = documentId;
+                        document.getElementById('editor-title').textContent = 'Edit Document';
+                        document.getElementById('delete-btn').style.display = 'inline-flex';
+                        this.loadDocuments(); // Reload to show new document
+                    })
+                    .catch(error => {
+                        console.error('❌ Error creating document:', error);
+                        this.showToast('Error creating document: ' + error.message, 'error');
+                    });
+                }
+            },
+
+            deleteDocument(documentId = null) {
+                if (!this.currentUser) {
+                    this.showToast('Please sign in to delete documents', 'error');
+                    return;
+                }
+
+                const docIdToDelete = documentId || this.currentDocumentId;
+                
+                if (!docIdToDelete) {
+                    this.showToast('No document selected', 'error');
+                    return;
+                }
+
+                if (confirm('Are you sure you want to delete this document?')) {
+                    database.ref(`laundromat/businessDocuments/${docIdToDelete}`).remove()
+                    .then(() => {
+                        console.log('✅ Document deleted successfully');
+                        this.showToast('Document deleted successfully!', 'success');
+                        
+                        // If we're deleting the currently edited document, clear the editor
+                        if (docIdToDelete === this.currentDocumentId) {
+                            this.createNewDocument();
+                        }
+                        // Reload documents to update the list
+                        this.loadDocuments();
+                    })
+                    .catch(error => {
+                        console.error('❌ Error deleting document:', error);
+                        this.showToast('Error deleting document: ' + error.message, 'error');
+                    });
+                }
+            },
+
+            formatDate(dateString) {
+                try {
+                    return new Date(dateString).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    });
+                } catch (e) {
+                    return 'Invalid Date';
+                }
+            },
+
+            formatRelativeDate(dateString) {
+                try {
+                    const date = new Date(dateString);
+                    const now = new Date();
+                    const diffTime = Math.abs(now - date);
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    
+                    if (diffDays === 1) return 'Yesterday';
+                    if (diffDays < 7) return `${diffDays} days ago`;
+                    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+                    return this.formatDate(dateString);
+                } catch (e) {
+                    return 'Unknown';
+                }
+            }
+        };
+
+        // Initialize the system
+        document.addEventListener('DOMContentLoaded', function() {
+            docSystem.init();
+        });
+    </script>
+</body>
+</html>

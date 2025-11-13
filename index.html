@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>De Supreme - Business Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --gray: #95a5a6;
+            --success: #27ae60;
+            --sidebar-width: 260px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--dark);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            overflow-y: auto;
+            transition: all 0.3s;
+        }
+
+        .logo {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo h1 {
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 24px;
+            color: var(--primary);
+        }
+
+        .nav-links {
+            list-style: none;
+            padding: 20px 0;
+        }
+
+        .nav-links li {
+            margin-bottom: 5px;
+        }
+
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: var(--light);
+            text-decoration: none;
+            transition: all 0.3s;
+            gap: 10px;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left: 4px solid var(--primary);
+        }
+
+        .nav-links i {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border-left: 6px solid var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .header h1 {
+            color: var(--dark);
+            margin-bottom: 5px;
+            font-size: 28px;
+        }
+
+        .header p {
+            color: var(--gray);
+            font-size: 16px;
+        }
+
+        .sync-status {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .sync-online {
+            background: #d5f4e6;
+            color: var(--success);
+        }
+
+        .sync-offline {
+            background: #fdeaea;
+            color: var(--danger);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid var(--primary);
+        }
+
+        .user-info h4 {
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .user-info p {
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        /* Dashboard Grid */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--dark);
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            color: var(--gray);
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--light);
+            border-radius: 4px;
+            margin: 15px 0;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            text-decoration: none;
+            color: var(--dark);
+            transition: all 0.3s;
+            gap: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .action-btn:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        .action-btn i {
+            font-size: 24px;
+        }
+
+        /* Activity List */
+        .activity-list {
+            list-style: none;
+        }
+
+        .activity-list li {
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .activity-list li:last-child {
+            border-bottom: none;
+        }
+
+        .activity-list i {
+            width: 40px;
+            height: 40px;
+            background: var(--light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+        }
+
+        /* Button Styles */
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background: #27ae60;
+        }
+
+        /* Charts */
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-align: center;
+            color: var(--dark);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+            flex-grow: 1;
+        }
+
+        /* Section Title */
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--dark);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        /* Login Modal */
+        .login-modal {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 12px 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 5px 0;
+        }
+
+        .login-btn.signup {
+            background: var(--success);
+        }
+
+        .login-btn:hover {
+            opacity: 0.9;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--dark);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--gray);
+        }
+
+        .empty-state i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+            
+            .sidebar .logo span,
+            .sidebar .nav-links span {
+                display: none;
+            }
+            
+            .main-content {
+                margin-left: 70px;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+
+            .quick-actions {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Modal -->
+    <div id="login-modal" class="login-modal">
+        <div class="login-content">
+            <h2 style="margin-bottom: 30px; color: var(--dark);">🔐 Laundromat Login</h2>
+            <input type="email" id="login-email" class="login-input" placeholder="Email Address">
+            <input type="password" id="login-password" class="login-input" placeholder="Password">
+            <button class="login-btn" onclick="dashboard.signIn()">Sign In</button>
+            <button class="login-btn signup" onclick="dashboard.signUp()">Create New Account</button>
+            <div id="login-error" style="color: var(--danger); margin-top: 15px; display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Main App Content (Hidden until authenticated) -->
+    <div id="app-content" style="display: none;">
+        <div class="container">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="logo">
+                    <h1><i class="fas fa-tshirt"></i><span>De Supreme Laundry</span></h1>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="#" class="active"><i class="fas fa-home"></i> <span>Dashboard</span></a></li>
+                    <li><a href="crm.html"><i class="fas fa-users"></i> <span>Customer CRM</span></a></li>
+                    <li><a href="https://wa.me/2349043930196" target="_blank"><i class="fab fa-whatsapp"></i> <span>WhatsApp Business</span></a></li>
+                    <li><a href="https://www.facebook.com/share/1bK1uNXQN3/" target="_blank"><i class="fab fa-facebook"></i> <span>Facebook Page</span></a></li>
+                    <li><a href="https://share.google/qjpMmSaMOEqPlct1E" target="_blank"><i class="fab fa-google"></i> <span>Google My Business</span></a></li>
+                    <li><a href="finance.html"><i class="fas fa-chart-line"></i> <span>Financial Reports</span></a></li>
+                    <li><a href="scheduling.html"><i class="fas fa-calendar-alt"></i> <span>Scheduling</span></a></li>
+                    <li><a href="marketing.html"><i class="fas fa-bullhorn"></i> <span>Marketing Content</span></a></li>
+                    <li><a href="systems.html"><i class="fas fa-cogs"></i> <span>Business Systems</span></a></li>
+                    <li><a href="#" onclick="dashboard.signOut()"><i class="fas fa-sign-out-alt"></i> <span>Sign Out</span></a></li>
+                </ul>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="main-content">
+                <div class="header">
+                    <div>
+                        <h1>🏠 Business Dashboard</h1>
+                        <p>Complete overview of your laundromat business performance</p>
+                    </div>
+                    <div class="user-info">
+                        <img src="https://ui-avatars.com/api/?name=Laundromat+Owner&background=3498db&color=fff" alt="User">
+                        <div>
+                            <h4 id="user-display-name">Laundromat Owner</h4>
+                            <p>Admin</p>
+                            <div id="sync-status" class="sync-status sync-offline">🔄 Connecting to Firebase...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <a href="crm.html" class="action-btn">
+                        <i class="fas fa-users"></i>
+                        <span>Customer CRM</span>
+                        <small>Manage customers & relationships</small>
+                    </a>
+                    <a href="finance.html" class="action-btn">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Financial Reports</span>
+                        <small>View revenue & expenses</small>
+                    </a>
+                    <a href="scheduling.html" class="action-btn">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Scheduling</span>
+                        <small>Bookings & appointments</small>
+                    </a>
+                    <a href="marketing.html" class="action-btn">
+                        <i class="fas fa-bullhorn"></i>
+                        <span>Marketing</span>
+                        <small>Content & campaigns</small>
+                    </a>
+                    <a href="systems.html" class="action-btn">
+                        <i class="fas fa-cogs"></i>
+                        <span>Business Systems</span>
+                        <small>Documentation & processes</small>
+                    </a>
+                    <a href="https://wa.me/2349043930196" target="_blank" class="action-btn">
+                        <i class="fab fa-whatsapp"></i>
+                        <span>WhatsApp</span>
+                        <small>Message customers</small>
+                    </a>
+                </div>
+
+                <!-- Key Metrics -->
+                <div class="dashboard-grid">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Monthly Revenue</h3>
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-value">₦<span id="monthly-revenue">0</span></div>
+                        <div class="stat-label" id="revenue-change">+0% from last month</div>
+                        <div class="progress-bar">
+                            <div class="progress" id="revenue-progress" style="width: 0%"></div>
+                        </div>
+                        <div class="stats">
+                            <div class="stat">
+                                <div class="stat-value">₦<span id="revenue-target">200,000</span></div>
+                                <div class="stat-label">Target</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value" id="revenue-percentage">0%</div>
+                                <div class="stat-label">Progress</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Customer Engagement</h3>
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-value"><span id="satisfaction-rate">0</span>%</div>
+                        <div class="stat-label">Satisfaction Rate</div>
+                        <div class="progress-bar">
+                            <div class="progress" id="satisfaction-progress" style="width: 0%"></div>
+                        </div>
+                        <div class="stats">
+                            <div class="stat">
+                                <div class="stat-value" id="active-customers">0</div>
+                                <div class="stat-label">Active Customers</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value" id="new-customers">0</div>
+                                <div class="stat-label">New This Month</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Service Performance</h3>
+                            <i class="fas fa-tshirt"></i>
+                        </div>
+                        <div class="stat-value" id="completed-orders">0</div>
+                        <div class="stat-label">Completed Orders</div>
+                        <div class="progress-bar">
+                            <div class="progress" id="orders-progress" style="width: 0%"></div>
+                        </div>
+                        <div class="stats">
+                            <div class="stat">
+                                <div class="stat-value" id="pending-orders">0</div>
+                                <div class="stat-label">Pending</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-value" id="completion-rate">0%</div>
+                                <div class="stat-label">Completion Rate</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="card">
+                    <div class="section-title">
+                        <span>📈 Business Performance</span>
+                        <button class="btn" onclick="dashboard.refreshCharts()">
+                            <span>🔄</span> Refresh Charts
+                        </button>
+                    </div>
+                    <div class="charts-container">
+                        <div class="chart-card">
+                            <div class="chart-title">Revenue Trend</div>
+                            <div class="chart-container">
+                                <canvas id="revenue-trend-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-title">Service Distribution</div>
+                            <div class="chart-container">
+                                <canvas id="service-distribution-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-title">Customer Growth</div>
+                            <div class="chart-container">
+                                <canvas id="customer-growth-chart"></canvas>
+                            </div>
+                        </div>
+                        <div class="chart-card">
+                            <div class="chart-title">Expense Breakdown</div>
+                            <div class="chart-container">
+                                <canvas id="expense-breakdown-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity & Quick Stats -->
+                <div class="dashboard-grid">
+                    <!-- Recent Activity -->
+                    <div class="card">
+                        <div class="section-title">
+                            <span>📋 Recent Activity</span>
+                            <a href="finance.html" class="btn btn-secondary">
+                                <span>View All</span>
+                            </a>
+                        </div>
+                        <ul class="activity-list" id="recent-activity">
+                            <li>
+                                <i class="fas fa-user-plus"></i>
+                                <div>
+                                    <strong>New customer registered</strong>
+                                    <p>Loading recent activities...</p>
+                                    <small>Just now</small>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="card">
+                        <div class="section-title">
+                            <span>⚡ Quick Stats</span>
+                        </div>
+                        <div class="stats-grid" style="display: grid; gap: 15px;">
+                            <div class="stat-item">
+                                <div class="stat-label">Today's Revenue</div>
+                                <div class="stat-value">₦<span id="today-revenue">0</span></div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Weekly Appointments</div>
+                                <div class="stat-value" id="weekly-appointments">0</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Active Promotions</div>
+                                <div class="stat-value" id="active-promotions">0</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-label">Customer Satisfaction</div>
+                                <div class="stat-value" id="customer-satisfaction">0%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Schedule -->
+                <div class="card">
+                    <div class="section-title">
+                        <span>📅 Today's Schedule</span>
+                        <a href="scheduling.html" class="btn">
+                            <i class="fas fa-calendar-plus"></i>
+                            <span>Add Appointment</span>
+                        </a>
+                    </div>
+                    <div id="today-schedule">
+                        <div class="empty-state">
+                            <i class="fas fa-calendar-day"></i>
+                            <p>No appointments scheduled for today</p>
+                            <a href="scheduling.html" class="btn btn-secondary" style="margin-top: 10px;">
+                                Schedule Now
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB5duUDZTcu6eXJg8kB3Ciew2im4TMPc7Y",
+            authDomain: "trust-corp.firebaseapp.com",
+            databaseURL: "https://trust-corp-default-rtdb.firebaseio.com",
+            projectId: "trust-corp",
+            storageBucket: "trust-corp.firebasestorage.app",
+            messagingSenderId: "364233006581",
+            appId: "1:364233006581:web:fe030429cd5c7814a8d4bc",
+            measurementId: "G-V7TGLF03R8"
+        };
+
+        // Initialize Firebase
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+
+        const database = firebase.database();
+        const auth = firebase.auth();
+
+        const dashboard = {
+            currentUser: null,
+            isOnline: navigator.onLine,
+            charts: {},
+
+            init() {
+                console.log('🏠 Initializing Dashboard...');
+                this.setupAuthListener();
+                this.setupConnectivityListener();
+            },
+
+            setupAuthListener() {
+                auth.onAuthStateChanged((user) => {
+                    if (user) {
+                        this.currentUser = user;
+                        console.log('✅ User signed in:', user.email);
+                        this.handleUserSignedIn(user);
+                    } else {
+                        this.handleUserSignedOut();
+                    }
+                });
+            },
+
+            handleUserSignedIn(user) {
+                document.getElementById('login-modal').style.display = 'none';
+                document.getElementById('app-content').style.display = 'block';
+                document.getElementById('user-display-name').textContent = user.email.split('@')[0];
+                this.updateSyncStatus('🟢 Online - Firebase Connected');
+                this.showToast(`Welcome back, ${user.email.split('@')[0]}!`, 'success');
+                this.loadDashboardData();
+                this.initializeCharts();
+            },
+
+            handleUserSignedOut() {
+                document.getElementById('login-modal').style.display = 'flex';
+                document.getElementById('app-content').style.display = 'none';
+            },
+
+            async signIn() {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                const errorElement = document.getElementById('login-error');
+                
+                try {
+                    await auth.signInWithEmailAndPassword(email, password);
+                    errorElement.style.display = 'none';
+                } catch (error) {
+                    errorElement.textContent = 'Login failed: ' + error.message;
+                    errorElement.style.display = 'block';
+                }
+            },
+
+            async signUp() {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                const errorElement = document.getElementById('login-error');
+                
+                try {
+                    await auth.createUserWithEmailAndPassword(email, password);
+                    errorElement.style.display = 'none';
+                    this.showToast('Account created successfully!', 'success');
+                } catch (error) {
+                    errorElement.textContent = 'Sign up failed: ' + error.message;
+                    errorElement.style.display = 'block';
+                }
+            },
+
+            async signOut() {
+                try {
+                    await auth.signOut();
+                    this.showToast('Signed out successfully', 'success');
+                } catch (error) {
+                    console.error('Sign out error:', error);
+                }
+            },
+
+            setupConnectivityListener() {
+                window.addEventListener('online', () => {
+                    console.log('🌐 App is online');
+                    this.isOnline = true;
+                    this.updateSyncStatus('🟢 Online - Firebase Connected');
+                });
+                
+                window.addEventListener('offline', () => {
+                    console.log('📴 App is offline');
+                    this.isOnline = false;
+                    this.updateSyncStatus('🔴 Offline - Using Local Storage');
+                });
+            },
+
+            updateSyncStatus(status) {
+                const element = document.getElementById('sync-status');
+                if (element) {
+                    element.textContent = status;
+                    if (status.includes('Online')) {
+                        element.className = 'sync-status sync-online';
+                    } else {
+                        element.className = 'sync-status sync-offline';
+                    }
+                }
+            },
+
+            showToast(message, type = 'info') {
+                const toast = document.getElementById('toast');
+                toast.textContent = message;
+                toast.className = 'toast';
+                
+                if (type === 'success') {
+                    toast.style.background = 'var(--success)';
+                } else if (type === 'error') {
+                    toast.style.background = 'var(--danger)';
+                } else {
+                    toast.style.background = 'var(--dark)';
+                }
+                
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 3000);
+            },
+
+            loadDashboardData() {
+                console.log('📊 Loading dashboard data...');
+                
+                // Load data from Firebase
+                this.loadFinancialData();
+                this.loadCustomerData();
+                this.loadActivityData();
+                this.loadScheduleData();
+            },
+
+            loadFinancialData() {
+                // Load revenue data
+                database.ref('laundromat/transactions').once('value').then((snapshot) => {
+                    const transactions = snapshot.val();
+                    if (transactions) {
+                        const monthlyRevenue = this.calculateMonthlyRevenue(transactions);
+                        const revenueGrowth = this.calculateRevenueGrowth(transactions);
+                        
+                        document.getElementById('monthly-revenue').textContent = monthlyRevenue.toLocaleString();
+                        document.getElementById('revenue-change').textContent = `${revenueGrowth >= 0 ? '+' : ''}${revenueGrowth}% from last month`;
+                        document.getElementById('revenue-percentage').textContent = `${Math.min(100, Math.round((monthlyRevenue / 200000) * 100))}%`;
+                        document.getElementById('revenue-progress').style.width = `${Math.min(100, (monthlyRevenue / 200000) * 100)}%`;
+                        
+                        // Update today's revenue
+                        const todayRevenue = this.calculateTodayRevenue(transactions);
+                        document.getElementById('today-revenue').textContent = todayRevenue.toLocaleString();
+                    }
+                });
+
+                // Load expense data for charts
+                database.ref('laundromat/transactions').once('value').then((snapshot) => {
+                    const transactions = snapshot.val();
+                    if (transactions) {
+                        this.updateExpenseChart(transactions);
+                    }
+                });
+            },
+
+            loadCustomerData() {
+                database.ref('laundromat/customers').once('value').then((snapshot) => {
+                    const customers = snapshot.val();
+                    if (customers) {
+                        const customerArray = Object.values(customers);
+                        const activeCustomers = customerArray.filter(c => c.status === 'active').length;
+                        const newThisMonth = this.calculateNewThisMonth(customerArray);
+                        const satisfactionRate = this.calculateSatisfactionRate(customerArray);
+                        
+                        document.getElementById('active-customers').textContent = activeCustomers;
+                        document.getElementById('new-customers').textContent = newThisMonth;
+                        document.getElementById('satisfaction-rate').textContent = satisfactionRate;
+                        document.getElementById('satisfaction-progress').style.width = `${satisfactionRate}%`;
+                        document.getElementById('customer-satisfaction').textContent = `${satisfactionRate}%`;
+                        
+                        this.updateCustomerChart(customerArray);
+                    }
+                });
+            },
+
+            loadActivityData() {
+                // Load recent transactions and activities
+                database.ref('laundromat/transactions').once('value').then((snapshot) => {
+                    const transactions = snapshot.val();
+                    if (transactions) {
+                        this.updateRecentActivity(transactions);
+                        this.updateServiceChart(transactions);
+                    }
+                });
+            },
+
+            loadScheduleData() {
+                database.ref('laundromat/appointments').once('value').then((snapshot) => {
+                    const appointments = snapshot.val();
+                    if (appointments) {
+                        this.updateTodaySchedule(appointments);
+                        this.updateAppointmentStats(appointments);
+                    }
+                });
+            },
+
+            calculateMonthlyRevenue(transactions) {
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                let revenue = 0;
+
+                Object.values(transactions).forEach(transaction => {
+                    if (transaction.type === 'revenue') {
+                        const transDate = new Date(transaction.date);
+                        if (transDate.getMonth() === currentMonth && transDate.getFullYear() === currentYear) {
+                            revenue += transaction.amount;
+                        }
+                    }
+                });
+
+                return revenue;
+            },
+
+            calculateTodayRevenue(transactions) {
+                const today = new Date().toISOString().split('T')[0];
+                let revenue = 0;
+
+                Object.values(transactions).forEach(transaction => {
+                    if (transaction.type === 'revenue' && transaction.date === today) {
+                        revenue += transaction.amount;
+                    }
+                });
+
+                return revenue;
+            },
+
+            calculateRevenueGrowth(transactions) {
+                // Simplified growth calculation
+                return 12.5; // Example growth percentage
+            },
+
+            calculateNewThisMonth(customers) {
+                const currentMonth = new Date().getMonth();
+                const currentYear = new Date().getFullYear();
+                
+                return customers.filter(customer => {
+                    const createdDate = new Date(customer.createdAt);
+                    return createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear;
+                }).length;
+            },
+
+            calculateSatisfactionRate(customers) {
+                // Simplified satisfaction calculation
+                return 84; // Example satisfaction rate
+            },
+
+            updateRecentActivity(transactions) {
+                const activityList = document.getElementById('recent-activity');
+                const recentTransactions = Object.values(transactions)
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))
+                    .slice(0, 5);
+
+                if (recentTransactions.length === 0) {
+                    activityList.innerHTML = `
+                        <li>
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                <strong>No recent activity</strong>
+                                <p>Transactions will appear here once added</p>
+                            </div>
+                        </li>
+                    `;
+                    return;
+                }
+
+                activityList.innerHTML = recentTransactions.map(trans => {
+                    const icon = trans.type === 'revenue' ? 'fa-money-bill-wave' : 'fa-receipt';
+                    const typeText = trans.type === 'revenue' ? 'Payment received' : 'Expense recorded';
+                    const amountClass = trans.type === 'revenue' ? 'positive' : 'negative';
+                    
+                    return `
+                        <li>
+                            <i class="fas ${icon}"></i>
+                            <div>
+                                <strong>${typeText}</strong>
+                                <p>${trans.description || 'No description'} - <span class="${amountClass}">₦${trans.amount.toLocaleString()}</span></p>
+                                <small>${this.formatDate(trans.date)}</small>
+                            </div>
+                        </li>
+                    `;
+                }).join('');
+            },
+
+            updateTodaySchedule(appointments) {
+                const scheduleContainer = document.getElementById('today-schedule');
+                const today = new Date().toISOString().split('T')[0];
+                const todayAppointments = Object.values(appointments).filter(apt => apt.date === today);
+
+                if (todayAppointments.length === 0) {
+                    return; // Keep the empty state
+                }
+
+                scheduleContainer.innerHTML = todayAppointments.map(apt => `
+                    <div class="schedule-item" style="display: flex; justify-content: between; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
+                        <div style="flex: 1;">
+                            <strong>${apt.customer}</strong>
+                            <p>${apt.service} • ${apt.time}</p>
+                        </div>
+                        <span class="status status-${apt.status}" style="padding: 4px 8px; border-radius: 12px; font-size: 0.7rem; background: #e8f6ef; color: var(--secondary);">
+                            ${apt.status}
+                        </span>
+                    </div>
+                `).join('');
+            },
+
+            updateAppointmentStats(appointments) {
+                const today = new Date().toISOString().split('T')[0];
+                const todayAppointments = Object.values(appointments).filter(apt => apt.date === today).length;
+                
+                // Calculate weekly appointments
+                const weekStart = new Date();
+                weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                
+                const weeklyAppointments = Object.values(appointments).filter(apt => {
+                    const aptDate = new Date(apt.date);
+                    return aptDate >= weekStart && aptDate <= weekEnd;
+                }).length;
+
+                document.getElementById('weekly-appointments').textContent = weeklyAppointments;
+                
+                // Update orders stats
+                document.getElementById('completed-orders').textContent = Object.values(appointments).filter(apt => apt.status === 'completed').length;
+                document.getElementById('pending-orders').textContent = Object.values(appointments).filter(apt => apt.status === 'pending').length;
+                document.getElementById('completion-rate').textContent = '78%';
+                document.getElementById('orders-progress').style.width = '78%';
+            },
+
+            initializeCharts() {
+                // Revenue Trend Chart
+                const revenueCtx = document.getElementById('revenue-trend-chart');
+                this.charts.revenueTrend = new Chart(revenueCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'Monthly Revenue',
+                            data: [120000, 150000, 180000, 160000, 220000, 250000],
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return '₦' + (value / 1000) + 'k';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Service Distribution Chart
+                const serviceCtx = document.getElementById('service-distribution-chart');
+                this.charts.serviceDistribution = new Chart(serviceCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Wash & Fold', 'Dry Cleaning', 'Delivery', 'Detergents'],
+                        datasets: [{
+                            data: [45, 25, 20, 10],
+                            backgroundColor: ['#3498db', '#2ecc71', '#e74c3c', '#f39c12']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+
+                // Customer Growth Chart
+                const customerCtx = document.getElementById('customer-growth-chart');
+                this.charts.customerGrowth = new Chart(customerCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                            label: 'New Customers',
+                            data: [15, 22, 18, 25, 30, 28],
+                            backgroundColor: '#27ae60'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+
+                // Expense Breakdown Chart
+                const expenseCtx = document.getElementById('expense-breakdown-chart');
+                this.charts.expenseBreakdown = new Chart(expenseCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Staff', 'Utilities', 'Supplies', 'Maintenance', 'Rent'],
+                        datasets: [{
+                            data: [40, 20, 15, 10, 15],
+                            backgroundColor: ['#e74c3c', '#3498db', '#f39c12', '#9b59b6', '#34495e']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+            },
+
+            updateExpenseChart(transactions) {
+                // This would update the expense chart with real data
+                console.log('Updating expense chart with transaction data');
+            },
+
+            updateCustomerChart(customers) {
+                // This would update the customer chart with real data
+                console.log('Updating customer chart with customer data');
+            },
+
+            updateServiceChart(transactions) {
+                // This would update the service chart with real data
+                console.log('Updating service chart with transaction data');
+            },
+
+            refreshCharts() {
+                this.loadDashboardData();
+                this.showToast('Charts refreshed with latest data!', 'success');
+            },
+
+            formatDate(dateString) {
+                return new Date(dateString).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric'
+                });
+            }
+        };
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            dashboard.init();
+        });
+    </script>
+</body>
+</html>
