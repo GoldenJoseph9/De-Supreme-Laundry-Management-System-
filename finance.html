@@ -939,7 +939,7 @@
             border-left-color: #e74c3c;
         }
 
-        .service-card.detergents {
+        .service-card.ironing {
             border-left-color: #f39c12;
         }
 
@@ -980,6 +980,80 @@
         .toast.show {
             transform: translateY(0);
             opacity: 1;
+        }
+
+        /* Customer Search Styles */
+        .customer-search-container {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .customer-search {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .customer-search:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .customer-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            position: absolute;
+            width: 100%;
+            z-index: 100;
+            display: none;
+        }
+
+        .customer-list.show {
+            display: block;
+        }
+
+        .customer-option {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .customer-option:hover {
+            background: #f5f5f5;
+        }
+
+        .customer-option:last-child {
+            border-bottom: none;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 5px;
+        }
+
+        .action-btn {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .edit-btn {
+            background: var(--warning);
+            color: white;
+        }
+
+        .delete-btn {
+            background: var(--danger);
+            color: white;
         }
 
         @media (max-width: 768px) {
@@ -1129,7 +1203,7 @@
                 <!-- Financial Overview -->
                 <div class="card financial-card">
                     <div class="section-title">
-                        <span>📊 Financial Overview - <span id="current-period">October 2024</span></span>
+                        <span>📊 Financial Overview - <span id="current-period">November 2025</span></span>
                         <div>
                             <button class="btn btn-warning" onclick="accounting.openGoalsModal()">
                                 <span>🎯</span> Edit Goals
@@ -1340,11 +1414,12 @@
                                         <th>Category</th>
                                         <th>Amount</th>
                                         <th>Description</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody id="transactions-table">
                                     <tr>
-                                        <td colspan="6" class="empty-state">
+                                        <td colspan="7" class="empty-state">
                                             <div>No transactions recorded</div>
                                             <p>Add your first transaction to see data here</p>
                                         </td>
@@ -1388,8 +1463,9 @@
         <!-- Add Transaction Modal -->
         <div id="transaction-modal" class="modal">
             <div class="modal-content">
-                <h3 style="margin-bottom: 20px;">Add Transaction</h3>
+                <h3 style="margin-bottom: 20px;" id="transaction-modal-title">Add Transaction</h3>
                 <form id="transaction-form">
+                    <input type="hidden" id="trans-id">
                     <div class="form-group">
                         <label for="trans-type">Type</label>
                         <select id="trans-type" class="form-control" required onchange="accounting.toggleCustomerField()">
@@ -1401,9 +1477,11 @@
                     
                     <div id="customer-field" class="form-group" style="display: none;">
                         <label for="trans-customer">Customer</label>
-                        <select id="trans-customer" class="customer-select form-control">
-                            <option value="">Select Customer</option>
-                        </select>
+                        <div class="customer-search-container">
+                            <input type="text" id="trans-customer-search" class="customer-search" placeholder="Search customers..." oninput="accounting.filterCustomers()">
+                            <div id="customer-list" class="customer-list"></div>
+                        </div>
+                        <input type="hidden" id="trans-customer-id">
                         <button type="button" class="new-customer-btn" onclick="accounting.openNewCustomerModal()">+ New Customer</button>
                     </div>
                     
@@ -1414,7 +1492,7 @@
                             <option value="wash-fold">Wash & Fold</option>
                             <option value="dry-cleaning">Dry Cleaning</option>
                             <option value="delivery">Delivery</option>
-                            <option value="detergents">Detergents Sales</option>
+                            <option value="ironing">Ironing</option>
                             <option value="utilities">Utilities</option>
                             <option value="staff">Staff Salaries</option>
                             <option value="maintenance">Maintenance</option>
@@ -1439,7 +1517,7 @@
                     </div>
                     
                     <div class="form-actions">
-                        <button type="submit" class="btn" style="flex: 1;">Add Transaction</button>
+                        <button type="submit" class="btn" style="flex: 1;" id="transaction-submit-btn">Add Transaction</button>
                         <button type="button" class="btn" onclick="accounting.closeModal('transaction')" style="background: var(--gray);">Cancel</button>
                     </div>
                 </form>
@@ -1656,6 +1734,7 @@
                 targetProfit: 45000
             },
             selectedScenario: 'all',
+            editingTransactionId: null,
             
             init() {
                 console.log('🧾 Accounting system initializing...');
@@ -1665,6 +1744,7 @@
                 this.initializeCharts();
                 this.setupAllocationCalculator();
                 this.loadDataFromFirebase();
+                this.updateCurrentPeriodDisplay();
             },
 
             setupEventListeners() {
@@ -1685,6 +1765,13 @@
                     e.preventDefault();
                     this.saveGoals();
                 });
+
+                // Close customer dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.customer-search-container')) {
+                        document.getElementById('customer-list').classList.remove('show');
+                    }
+                });
             },
 
             setDefaultDate() {
@@ -1696,6 +1783,32 @@
                 document.getElementById('revenue-target').textContent = `₦${this.goals.monthlyRevenue.toLocaleString()}`;
                 document.getElementById('expense-target').textContent = `₦${this.goals.monthlyExpenses.toLocaleString()}`;
                 document.getElementById('profit-target').textContent = `₦${this.goals.targetProfit.toLocaleString()}`;
+            },
+
+            updateCurrentPeriodDisplay() {
+                const currentDate = new Date();
+                let periodText = '';
+                
+                switch(this.currentPeriod) {
+                    case 'daily':
+                        periodText = currentDate.toLocaleDateString();
+                        break;
+                    case 'weekly':
+                        const startOfWeek = new Date(currentDate);
+                        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+                        const endOfWeek = new Date(startOfWeek);
+                        endOfWeek.setDate(startOfWeek.getDate() + 6);
+                        periodText = `${startOfWeek.toLocaleDateString()} - ${endOfWeek.toLocaleDateString()}`;
+                        break;
+                    case 'monthly':
+                        periodText = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                        break;
+                    case 'yearly':
+                        periodText = currentDate.getFullYear().toString();
+                        break;
+                }
+                
+                document.getElementById('current-period').textContent = periodText;
             },
 
             initializeCharts() {
@@ -1762,7 +1875,7 @@
                 return new Chart(ctx, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Wash & Fold', 'Dry Cleaning', 'Delivery', 'Detergents'],
+                        labels: ['Wash & Fold', 'Dry Cleaning', 'Delivery', 'Ironing'],
                         datasets: [{
                             data: [0, 0, 0, 0],
                             backgroundColor: ['#3498db', '#2ecc71', '#e74c3c', '#f39c12']
@@ -1882,6 +1995,7 @@
                 document.getElementById('totalDisplay').textContent = `₦${totalAmount.toLocaleString('en-NG')}`;
                 document.getElementById('allocation-period').textContent = this.currentPeriod.charAt(0).toUpperCase() + this.currentPeriod.slice(1);
                 
+                // Fixed allocation percentages - properly removing labor costs when hiring
                 const percentages = {
                     all: {
                         business: {
@@ -1899,24 +2013,24 @@
                         business: {
                             'Direct Costs': 16.25,
                             'Overhead': 8.25,
-                            'Business Fund': 25.0
+                            'Business Fund': 25.0,
+                            'Washer Payment': 25.0
                         },
                         personal: {
                             'Management': 15.25,
-                            'Washing Labor': 15.0,
-                            'Ironing Labor': 20.25
+                            'Ironing Labor': 10.25
                         }
                     },
                     ironer: {
                         business: {
                             'Direct Costs': 16.25,
                             'Overhead': 8.25,
-                            'Business Fund': 25.0
+                            'Business Fund': 25.0,
+                            'Ironer Payment': 16.0
                         },
                         personal: {
                             'Management': 15.25,
-                            'Washing Labor': 20.25,
-                            'Ironing Labor': 15.0
+                            'Washing Labor': 25.0
                         }
                     }
                 };
@@ -2055,7 +2169,7 @@
                 if (this.transactions.length === 0) {
                     tbody.innerHTML = `
                         <tr>
-                            <td colspan="6" class="empty-state">
+                            <td colspan="7" class="empty-state">
                                 <div>No transactions recorded</div>
                                 <p>Add your first transaction to see data here</p>
                             </td>
@@ -2069,7 +2183,16 @@
                     new Date(b.date) - new Date(a.date)
                 );
 
-                tbody.innerHTML = sortedTransactions.map(trans => `
+                tbody.innerHTML = sortedTransactions.map(trans => {
+                    // Get customer name if available
+                    let customerName = 'N/A';
+                    if (trans.customerId && this.customers[trans.customerId]) {
+                        customerName = this.customers[trans.customerId].name;
+                    } else if (trans.customer) {
+                        customerName = trans.customer;
+                    }
+                    
+                    return `
                     <tr>
                         <td>${new Date(trans.date).toLocaleDateString()}</td>
                         <td>
@@ -2077,14 +2200,20 @@
                                 ${trans.type.charAt(0).toUpperCase() + trans.type.slice(1)}
                             </span>
                         </td>
-                        <td>${trans.customer || 'N/A'}</td>
+                        <td>${customerName}</td>
                         <td>${trans.category}</td>
                         <td class="${trans.type === 'revenue' ? 'positive' : 'negative'}">
                             ₦${trans.amount.toLocaleString()}
                         </td>
                         <td>${trans.description || ''}</td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="action-btn edit-btn" onclick="accounting.editTransaction('${trans.id}')">Edit</button>
+                                <button class="action-btn delete-btn" onclick="accounting.deleteTransaction('${trans.id}')">Delete</button>
+                            </div>
+                        </td>
                     </tr>
-                `).join('');
+                `}).join('');
             },
 
             updateFinancialOverview() {
@@ -2249,7 +2378,7 @@
                     'Wash & Fold': 0,
                     'Dry Cleaning': 0,
                     'Delivery': 0,
-                    'Detergents': 0
+                    'Ironing': 0
                 };
                 
                 this.transactions.forEach(trans => {
@@ -2264,8 +2393,8 @@
                             case 'delivery':
                                 serviceRevenue['Delivery'] += trans.amount;
                                 break;
-                            case 'detergents':
-                                serviceRevenue['Detergents'] += trans.amount;
+                            case 'ironing':
+                                serviceRevenue['Ironing'] += trans.amount;
                                 break;
                         }
                     }
@@ -2275,7 +2404,7 @@
                     serviceRevenue['Wash & Fold'],
                     serviceRevenue['Dry Cleaning'],
                     serviceRevenue['Delivery'],
-                    serviceRevenue['Detergents']
+                    serviceRevenue['Ironing']
                 ];
                 this.charts.revenueByService.update();
                 
@@ -2325,7 +2454,7 @@
                     'wash-fold': { name: 'Wash & Fold', revenue: 0, count: 0 },
                     'dry-cleaning': { name: 'Dry Cleaning', revenue: 0, count: 0 },
                     'delivery': { name: 'Delivery', revenue: 0, count: 0 },
-                    'detergents': { name: 'Detergents', revenue: 0, count: 0 }
+                    'ironing': { name: 'Ironing', revenue: 0, count: 0 }
                 };
                 
                 // Calculate service performance from transactions
@@ -2361,8 +2490,8 @@
                                 <div class="service-revenue">₦${Math.round(currentReport.revenue * 0.1).toLocaleString('en-NG')}</div>
                                 <div class="service-count">5 transactions</div>
                             </div>
-                            <div class="service-card detergents">
-                                <div class="service-name">Detergents</div>
+                            <div class="service-card ironing">
+                                <div class="service-name">Ironing</div>
                                 <div class="service-revenue">₦${Math.round(currentReport.revenue * 0.05).toLocaleString('en-NG')}</div>
                                 <div class="service-count">3 transactions</div>
                             </div>
@@ -2391,14 +2520,49 @@
             },
 
             updateCustomerSelect() {
-                const select = document.getElementById('trans-customer');
-                select.innerHTML = '<option value="">Select Customer</option>';
+                const customerList = document.getElementById('customer-list');
+                customerList.innerHTML = '';
                 
-                for (const [id, customer] of Object.entries(this.customers)) {
-                    const option = document.createElement('option');
-                    option.value = id;
+                // Sort customers alphabetically
+                const sortedCustomers = Object.entries(this.customers).sort((a, b) => {
+                    return a[1].name.localeCompare(b[1].name);
+                });
+                
+                sortedCustomers.forEach(([id, customer]) => {
+                    const option = document.createElement('div');
+                    option.className = 'customer-option';
                     option.textContent = customer.name;
-                    select.appendChild(option);
+                    option.setAttribute('data-id', id);
+                    option.onclick = () => {
+                        document.getElementById('trans-customer-search').value = customer.name;
+                        document.getElementById('trans-customer-id').value = id;
+                        customerList.classList.remove('show');
+                    };
+                    customerList.appendChild(option);
+                });
+            },
+
+            filterCustomers() {
+                const searchTerm = document.getElementById('trans-customer-search').value.toLowerCase();
+                const customerList = document.getElementById('customer-list');
+                const options = customerList.querySelectorAll('.customer-option');
+                
+                let hasVisibleOptions = false;
+                
+                options.forEach(option => {
+                    const customerName = option.textContent.toLowerCase();
+                    if (customerName.includes(searchTerm)) {
+                        option.style.display = 'block';
+                        hasVisibleOptions = true;
+                    } else {
+                        option.style.display = 'none';
+                    }
+                });
+                
+                if (searchTerm && hasVisibleOptions) {
+                    customerList.classList.add('show');
+                } else {
+                    customerList.classList.remove('show');
                 }
             },
 
@@ -2440,6 +2604,11 @@
             },
 
             openAddTransactionModal() {
+                this.editingTransactionId = null;
+                document.getElementById('transaction-modal-title').textContent = 'Add Transaction';
+                document.getElementById('transaction-submit-btn').textContent = 'Add Transaction';
+                document.getElementById('transaction-form').reset();
+                document.getElementById('trans-date').value = new Date().toISOString().split('T')[0];
                 document.getElementById('transaction-modal').style.display = 'flex';
             },
 
@@ -2461,7 +2630,7 @@
             async addTransaction() {
                 const formData = {
                     type: document.getElementById('trans-type').value,
-                    customer: document.getElementById('trans-customer').value || null,
+                    customerId: document.getElementById('trans-customer-id').value || null,
                     category: document.getElementById('trans-category').value,
                     amount: parseFloat(document.getElementById('trans-amount').value),
                     date: document.getElementById('trans-date').value,
@@ -2470,13 +2639,22 @@
                 };
 
                 try {
-                    const transactionId = 'trans-' + Date.now();
-                    await database.ref(`laundromat/transactions/${transactionId}`).set(formData);
-                    this.showToast('Transaction added successfully!', 'success');
+                    if (this.editingTransactionId) {
+                        // Update existing transaction
+                        await database.ref(`laundromat/transactions/${this.editingTransactionId}`).update(formData);
+                        this.showToast('Transaction updated successfully!', 'success');
+                    } else {
+                        // Add new transaction
+                        const transactionId = 'trans-' + Date.now();
+                        formData.id = transactionId;
+                        await database.ref(`laundromat/transactions/${transactionId}`).set(formData);
+                        this.showToast('Transaction added successfully!', 'success');
+                    }
+                    
                     this.closeModal('transaction');
                     document.getElementById('transaction-form').reset();
                 } catch (error) {
-                    this.showToast('Error adding transaction: ' + error.message, 'error');
+                    this.showToast('Error saving transaction: ' + error.message, 'error');
                 }
             },
 
@@ -2500,6 +2678,48 @@
                 }
             },
 
+            async editTransaction(transactionId) {
+                const transaction = this.transactions.find(t => t.id === transactionId);
+                if (!transaction) return;
+                
+                this.editingTransactionId = transactionId;
+                document.getElementById('transaction-modal-title').textContent = 'Edit Transaction';
+                document.getElementById('transaction-submit-btn').textContent = 'Update Transaction';
+                
+                // Populate form with transaction data
+                document.getElementById('trans-id').value = transactionId;
+                document.getElementById('trans-type').value = transaction.type;
+                document.getElementById('trans-category').value = transaction.category;
+                document.getElementById('trans-amount').value = transaction.amount;
+                document.getElementById('trans-date').value = transaction.date;
+                document.getElementById('trans-description').value = transaction.description || '';
+                
+                // Handle customer field
+                this.toggleCustomerField();
+                if (transaction.type === 'revenue') {
+                    if (transaction.customerId && this.customers[transaction.customerId]) {
+                        document.getElementById('trans-customer-search').value = this.customers[transaction.customerId].name;
+                        document.getElementById('trans-customer-id').value = transaction.customerId;
+                    } else if (transaction.customer) {
+                        document.getElementById('trans-customer-search').value = transaction.customer;
+                        document.getElementById('trans-customer-id').value = '';
+                    }
+                }
+                
+                document.getElementById('transaction-modal').style.display = 'flex';
+            },
+
+            async deleteTransaction(transactionId) {
+                if (confirm('Are you sure you want to delete this transaction?')) {
+                    try {
+                        await database.ref(`laundromat/transactions/${transactionId}`).remove();
+                        this.showToast('Transaction deleted successfully!', 'success');
+                    } catch (error) {
+                        this.showToast('Error deleting transaction: ' + error.message, 'error');
+                    }
+                }
+            },
+
             saveGoals() {
                 this.goals.monthlyRevenue = parseInt(document.getElementById('goal-revenue').value);
                 this.goals.monthlyExpenses = parseInt(document.getElementById('goal-expenses').value);
@@ -2515,31 +2735,7 @@
                 document.querySelectorAll('.period-btn').forEach(btn => btn.classList.remove('active'));
                 event.target.classList.add('active');
                 
-                // Update period display
-                const currentDate = new Date();
-                let periodText = '';
-                
-                switch(period) {
-                    case 'daily':
-                        periodText = currentDate.toLocaleDateString();
-                        break;
-                    case 'weekly':
-                        const startOfWeek = new Date(currentDate);
-                        startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-                        const endOfWeek = new Date(startOfWeek);
-                        endOfWeek.setDate(startOfWeek.getDate() + 6);
-                        periodText = `${startOfWeek.toLocaleDateString()} - ${endOfWeek.toLocaleDateString()}`;
-                        break;
-                    case 'monthly':
-                        periodText = currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-                        break;
-                    case 'yearly':
-                        periodText = currentDate.getFullYear().toString();
-                        break;
-                }
-                
-                document.getElementById('current-period').textContent = periodText;
-                
+                this.updateCurrentPeriodDisplay();
                 this.updateFinancialOverview();
                 this.calculateAllocation();
                 this.updateCharts();
