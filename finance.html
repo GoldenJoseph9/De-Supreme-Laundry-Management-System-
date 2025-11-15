@@ -1116,8 +1116,8 @@
     <div id="login-modal" class="login-modal">
         <div class="login-content">
             <h2 style="margin-bottom: 30px; color: var(--dark);">🔐 Laundromat Login</h2>
-            <input type="email" id="login-email" class="login-input" placeholder="Email Address">
-            <input type="password" id="login-password" class="login-input" placeholder="Password">
+            <input type="email" id="login-email" class="login-input" placeholder="Email Address" value="desupremelaundry@gmail.com">
+            <input type="password" id="login-password" class="login-input" placeholder="Password" value="admin123">
             <button class="login-btn" onclick="authSystem.signIn()">Sign In</button>
             <button class="login-btn signup" onclick="authSystem.signUp()">Create New Account</button>
             <div id="login-error" style="color: var(--danger); margin-top: 15px; display: none;"></div>
@@ -1569,7 +1569,7 @@
                     
                     <div class="form-group">
                         <label for="goal-profit">Monthly Profit Target (₦)</label>
-                        <input type="number" id="goal-profit" class="form-control" required step="1000">
+                        <input type="number" id="goal-profit" class="form-control" required step="1000>
                     </div>
                     
                     <div class="form-actions">
@@ -1722,7 +1722,7 @@
             }
         };
 
-        // Accounting System
+        // Accounting System with Unified Customer Data
         const accounting = {
             currentPeriod: 'monthly',
             currentAnalyticsTab: 'financial',
@@ -1735,6 +1735,7 @@
             },
             selectedScenario: 'all',
             editingTransactionId: null,
+            customerDatabasePath: 'laundromat/customers', // Unified customer path
             
             init() {
                 console.log('🧾 Accounting system initializing...');
@@ -1995,7 +1996,7 @@
                 document.getElementById('totalDisplay').textContent = `₦${totalAmount.toLocaleString('en-NG')}`;
                 document.getElementById('allocation-period').textContent = this.currentPeriod.charAt(0).toUpperCase() + this.currentPeriod.slice(1);
                 
-                // Fixed allocation percentages - properly removing labor costs when hiring
+                // Fixed allocation percentages
                 const percentages = {
                     all: {
                         business: {
@@ -2036,108 +2037,189 @@
                 };
 
                 const scenarioData = percentages[scenario];
-                let businessTotal = 0;
-                let personalTotal = 0;
+                
+                // Calculate business and personal totals BEFORE 10% deduction
+                let businessTotalBeforeDeduction = 0;
+                for (const percentage of Object.values(scenarioData.business)) {
+                    businessTotalBeforeDeduction += (totalAmount * percentage) / 100;
+                }
+                
+                let personalTotalBeforeDeduction = 0;
+                for (const percentage of Object.values(scenarioData.personal)) {
+                    personalTotalBeforeDeduction += (totalAmount * percentage) / 100;
+                }
+                
+                // Apply 10% deduction to each side separately
+                const businessDeduction = businessTotalBeforeDeduction * 0.10;
+                const personalDeduction = personalTotalBeforeDeduction * 0.10;
+                
+                const businessTotalAfterDeduction = businessTotalBeforeDeduction - businessDeduction;
+                const personalTotalAfterDeduction = personalTotalBeforeDeduction - personalDeduction;
 
                 // Render business breakdown
                 let businessHTML = '';
+                
+                // Show business total before deduction
+                businessHTML += `
+                    <div class="breakdown-item">
+                        <span class="category">Business Total (Before 10%)</span>
+                        <span class="amount">₦${businessTotalBeforeDeduction.toLocaleString('en-NG')}</span>
+                        <span class="percentage">${(businessTotalBeforeDeduction / totalAmount * 100).toFixed(1)}%</span>
+                    </div>
+                `;
+                
+                // Show business deduction
+                businessHTML += `
+                    <div class="breakdown-item deduction">
+                        <span class="category">10% Deduction</span>
+                        <span class="amount">-₦${businessDeduction.toLocaleString('en-NG')}</span>
+                        <span class="percentage">10%</span>
+                    </div>
+                `;
+                
+                // Calculate and show business breakdown after deduction
                 for (const [category, percentage] of Object.entries(scenarioData.business)) {
-                    const amount = (totalAmount * percentage) / 100;
-                    businessTotal += amount;
+                    const originalAmount = (totalAmount * percentage) / 100;
+                    const adjustedAmount = (originalAmount / businessTotalBeforeDeduction) * businessTotalAfterDeduction;
+                    
                     businessHTML += `
                         <div class="breakdown-item">
                             <span class="category">${category}</span>
-                            <span class="amount">₦${amount.toLocaleString('en-NG')}</span>
-                            <span class="percentage">${percentage}%</span>
+                            <span class="amount">₦${adjustedAmount.toLocaleString('en-NG')}</span>
+                            <span class="percentage">${(adjustedAmount / totalAmount * 100).toFixed(1)}%</span>
                         </div>
                     `;
                 }
+                
                 businessHTML += `
-                    <div class="breakdown-item total">
-                        <span class="category">Business Subtotal</span>
-                        <span class="amount">₦${businessTotal.toLocaleString('en-NG')}</span>
-                        <span class="percentage">${(businessTotal / totalAmount * 100).toFixed(1)}%</span>
+                    <div class="breakdown-item final-total">
+                        <span class="category">Business Final Total</span>
+                        <span class="amount">₦${businessTotalAfterDeduction.toLocaleString('en-NG')}</span>
+                        <span class="percentage">${(businessTotalAfterDeduction / totalAmount * 100).toFixed(1)}%</span>
                     </div>
                 `;
+                
                 document.getElementById('businessBreakdown').innerHTML = businessHTML;
 
                 // Render personal breakdown
                 let personalHTML = '';
+                
+                // Show personal total before deduction
+                personalHTML += `
+                    <div class="breakdown-item">
+                        <span class="category">Your Total (Before 10%)</span>
+                        <span class="amount">₦${personalTotalBeforeDeduction.toLocaleString('en-NG')}</span>
+                        <span class="percentage">${(personalTotalBeforeDeduction / totalAmount * 100).toFixed(1)}%</span>
+                    </div>
+                `;
+                
+                // Show personal deduction
+                personalHTML += `
+                    <div class="breakdown-item deduction">
+                        <span class="category">10% Deduction</span>
+                        <span class="amount">-₦${personalDeduction.toLocaleString('en-NG')}</span>
+                        <span class="percentage">10%</span>
+                    </div>
+                `;
+                
+                // Calculate and show personal breakdown after deduction
                 for (const [category, percentage] of Object.entries(scenarioData.personal)) {
-                    const amount = (totalAmount * percentage) / 100;
-                    personalTotal += amount;
+                    const originalAmount = (totalAmount * percentage) / 100;
+                    const adjustedAmount = (originalAmount / personalTotalBeforeDeduction) * personalTotalAfterDeduction;
+                    
                     personalHTML += `
                         <div class="breakdown-item">
                             <span class="category">${category}</span>
-                            <span class="amount">₦${amount.toLocaleString('en-NG')}</span>
-                            <span class="percentage">${percentage}%</span>
+                            <span class="amount">₦${adjustedAmount.toLocaleString('en-NG')}</span>
+                            <span class="percentage">${(adjustedAmount / totalAmount * 100).toFixed(1)}%</span>
                         </div>
                     `;
                 }
+                
                 personalHTML += `
-                    <div class="breakdown-item total">
-                        <span class="category">Personal Subtotal</span>
-                        <span class="amount">₦${personalTotal.toLocaleString('en-NG')}</span>
-                        <span class="percentage">${(personalTotal / totalAmount * 100).toFixed(1)}%</span>
+                    <div class="breakdown-item final-total">
+                        <span class="category">Your Final Total</span>
+                        <span class="amount">₦${personalTotalAfterDeduction.toLocaleString('en-NG')}</span>
+                        <span class="percentage">${(personalTotalAfterDeduction / totalAmount * 100).toFixed(1)}%</span>
                     </div>
                 `;
+                
                 document.getElementById('personalBreakdown').innerHTML = personalHTML;
 
-                // Calculate final allocation after 10% deduction
-                const deduction = totalAmount * 0.10;
-                const remainingAmount = totalAmount - deduction;
-                const businessFinal = (businessTotal / totalAmount) * remainingAmount;
-                const personalFinal = (personalTotal / totalAmount) * remainingAmount;
+                // Update summary section
+                document.getElementById('businessFinalAmount').textContent = `₦${businessTotalAfterDeduction.toLocaleString('en-NG')}`;
+                document.getElementById('businessFinalPercentage').textContent = `${((businessTotalAfterDeduction / totalAmount) * 100).toFixed(1)}% of total`;
+                
+                document.getElementById('personalFinalAmount').textContent = `₦${personalTotalAfterDeduction.toLocaleString('en-NG')}`;
+                document.getElementById('personalFinalPercentage').textContent = `${((personalTotalAfterDeduction / totalAmount) * 100).toFixed(1)}% of total`;
 
-                document.getElementById('businessFinalAmount').textContent = `₦${businessFinal.toLocaleString('en-NG')}`;
-                document.getElementById('businessFinalPercentage').textContent = `${((businessFinal / totalAmount) * 100).toFixed(1)}% of total`;
-                document.getElementById('personalFinalAmount').textContent = `₦${personalFinal.toLocaleString('en-NG')}`;
-                document.getElementById('personalFinalPercentage').textContent = `${((personalFinal / totalAmount) * 100).toFixed(1)}% of total`;
-
-                // Render transfers
-                document.getElementById('personalTransfers').innerHTML = `
+                // Transfer Instructions
+                let personalTransfersHTML = '';
+                let businessTransfersHTML = '';
+                
+                // Personal transfers
+                const totalTithes = businessDeduction + personalDeduction;
+                const needsAllocation = personalTotalAfterDeduction * 0.3;
+                const savingsAllocation = personalTotalAfterDeduction * 0.2;
+                const personalTransferTotal = totalTithes + needsAllocation;
+                
+                personalTransfersHTML += `
                     <div class="transfer-item">
-                        <span class="transfer-destination">Business Account</span>
-                        <span class="transfer-amount">₦${businessFinal.toLocaleString('en-NG')}</span>
+                        <span class="transfer-destination">Two Tithes (10% from both sides)</span>
+                        <span class="transfer-amount">₦${totalTithes.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                     <div class="transfer-item">
-                        <span class="transfer-destination">Your Account</span>
-                        <span class="transfer-amount">₦${personalFinal.toLocaleString('en-NG')}</span>
-                    </div>
-                    <div class="transfer-item deduction">
-                        <span class="transfer-destination">10% Deduction</span>
-                        <span class="transfer-amount">-₦${deduction.toLocaleString('en-NG')}</span>
+                        <span class="transfer-destination">Your Needs (30% of personal)</span>
+                        <span class="transfer-amount">₦${needsAllocation.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                     <div class="transfer-item total">
-                        <span class="transfer-destination">Total Transferred</span>
-                        <span class="transfer-amount">₦${remainingAmount.toLocaleString('en-NG')}</span>
+                        <span class="transfer-destination">TOTAL TO PALMPAY</span>
+                        <span class="transfer-amount">₦${personalTransferTotal.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                 `;
-
-                document.getElementById('businessTransfers').innerHTML = `
+                
+                document.getElementById('personalTransfers').innerHTML = personalTransfersHTML;
+                
+                // Business transfers
+                const directCosts = (scenarioData.business['Direct Costs'] / 100 * totalAmount / businessTotalBeforeDeduction) * businessTotalAfterDeduction;
+                const overhead = (scenarioData.business['Overhead'] / 100 * totalAmount / businessTotalBeforeDeduction) * businessTotalAfterDeduction;
+                const businessFund = (scenarioData.business['Business Fund'] / 100 * totalAmount / businessTotalBeforeDeduction) * businessTotalAfterDeduction;
+                
+                // Calculate business expenses total (Business Fund + Direct Costs + Overhead)
+                const businessExpensesTotal = businessFund + directCosts + overhead;
+                
+                businessTransfersHTML += `
                     <div class="transfer-item">
-                        <span class="transfer-destination">Operational Costs</span>
-                        <span class="transfer-amount">₦${(businessTotal * 0.6).toLocaleString('en-NG')}</span>
-                    </div>
-                    <div class="transfer-item">
-                        <span class="transfer-destination">Business Savings</span>
-                        <span class="transfer-amount">₦${(businessTotal * 0.4).toLocaleString('en-NG')}</span>
+                        <span class="transfer-destination">Business Fund + Direct Costs + Overhead</span>
+                        <span class="transfer-amount">₦${businessExpensesTotal.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                     <div class="transfer-item total">
-                        <span class="transfer-destination">Total Business</span>
-                        <span class="transfer-amount">₦${businessFinal.toLocaleString('en-NG')}</span>
+                        <span class="transfer-destination">TOTAL TO OPAY 2</span>
+                        <span class="transfer-amount">₦${businessExpensesTotal.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    </div>
+                    <div class="transfer-item">
+                        <span class="transfer-destination">Business Fund to Safebox</span>
+                        <span class="transfer-amount">₦${businessFund.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                    </div>
+                    <div class="transfer-item">
+                        <span class="transfer-destination">Savings to OPAY 1 Safebox</span>
+                        <span class="transfer-amount">₦${savingsAllocation.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                 `;
+                
+                document.getElementById('businessTransfers').innerHTML = businessTransfersHTML;
 
                 // Render personal budget
-                const needsAmount = personalFinal * 0.30;
-                const savingsAmount = personalFinal * 0.20;
-                const dailyAmount = personalFinal * 0.50;
+                const needsAmount = personalTotalAfterDeduction * 0.30;
+                const savingsAmount = personalTotalAfterDeduction * 0.20;
+                const dailyAmount = personalTotalAfterDeduction * 0.50;
 
                 document.getElementById('needsAmount').textContent = `₦${needsAmount.toLocaleString('en-NG')}`;
                 document.getElementById('needsPercentage').textContent = `${((needsAmount / totalAmount) * 100).toFixed(1)}% of total`;
+                
                 document.getElementById('savingsAmount').textContent = `₦${savingsAmount.toLocaleString('en-NG')}`;
                 document.getElementById('savingsPercentage').textContent = `${((savingsAmount / totalAmount) * 100).toFixed(1)}% of total`;
+                
                 document.getElementById('dailyAmount').textContent = `₦${dailyAmount.toLocaleString('en-NG')}`;
                 document.getElementById('dailyPercentage').textContent = `${((dailyAmount / totalAmount) * 100).toFixed(1)}% of total`;
             },
@@ -2151,11 +2233,11 @@
                     this.updateFinancialOverview();
                     this.updateCharts();
                     this.updateServicePerformance();
-                    this.calculateAllocation(); // Recalculate allocation when data changes
+                    this.calculateAllocation();
                 });
 
-                // Load customers
-                database.ref('laundromat/customers').on('value', (snapshot) => {
+                // Load customers from unified path
+                database.ref(this.customerDatabasePath).on('value', (snapshot) => {
                     const customers = snapshot.val();
                     this.customers = customers || {};
                     this.updateCustomerSelect();
@@ -2664,15 +2746,19 @@
                     phone: document.getElementById('customer-phone').value || '',
                     email: document.getElementById('customer-email').value || '',
                     status: 'active',
-                    createdAt: new Date().toISOString()
+                    createdAt: new Date().toISOString(),
+                    createdBy: authSystem.currentUser.uid
                 };
 
                 try {
                     const customerId = 'cust-' + Date.now();
-                    await database.ref(`laundromat/customers/${customerId}`).set(formData);
+                    await database.ref(`${this.customerDatabasePath}/${customerId}`).set(formData);
                     this.showToast('Customer added successfully!', 'success');
                     this.closeModal('new-customer');
                     document.getElementById('new-customer-form').reset();
+                    
+                    // Update the customer select dropdown
+                    this.updateCustomerSelect();
                 } catch (error) {
                     this.showToast('Error adding customer: ' + error.message, 'error');
                 }
