@@ -391,6 +391,16 @@
             color: white;
         }
 
+        .action-call {
+            background: #f0f8ff;
+            color: #007bff;
+        }
+
+        .action-call:hover {
+            background: #007bff;
+            color: white;
+        }
+
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -429,6 +439,12 @@
             width: 100%;
             max-width: 500px;
             box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-wide {
+            max-width: 800px;
         }
 
         .modal-header {
@@ -502,6 +518,38 @@
             opacity: 1;
         }
 
+        .transaction-history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .transaction-history-table th, .transaction-history-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .transaction-history-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .transaction-history-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .positive {
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .negative {
+            color: var(--danger);
+            font-weight: bold;
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 width: 70px;
@@ -522,6 +570,10 @@
             
             .search-box input {
                 width: 100%;
+            }
+            
+            .action-cell {
+                flex-wrap: wrap;
             }
         }
     </style>
@@ -669,7 +721,7 @@
                         <select class="form-control" id="customer-preferences">
                             <option value="wash-fold">Wash & Fold</option>
                             <option value="dry-cleaning">Dry Cleaning</option>
-                            <option value="delivery">Delivery Service</option>
+                            <option value="ironing">Ironing</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -687,6 +739,19 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Customer History Modal -->
+    <div class="modal" id="customer-history-modal">
+        <div class="modal-content modal-wide">
+            <div class="modal-header">
+                <h3 id="history-modal-title">Customer Transaction History</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div id="customer-history-content">
+                <!-- Transaction history will be loaded here -->
+            </div>
         </div>
     </div>
 
@@ -877,20 +942,21 @@
             }
         };
 
-        // User-Based CRM System
+        // Enhanced CRM System with Unified Customer Data
         const crmSystem = {
             currentCustomer: null,
             customers: [],
-            databasePath: '',
+            allTransactions: [],
+            databasePath: 'laundromat/customers', // Unified customer path
 
             init() {
                 if (!authSystem.currentUser) {
                     return;
                 }
                 
-                this.databasePath = `laundromat/users/${authSystem.currentUser.uid}/customers`;
                 this.bindEvents();
                 this.loadCustomers();
+                this.loadAllTransactions();
             },
 
             bindEvents() {
@@ -907,14 +973,11 @@
                     this.handleCustomerFormSubmit();
                 });
 
-                document.querySelector('.close-modal').addEventListener('click', () => {
-                    this.closeCustomerModal();
-                });
-
-                document.getElementById('add-customer-modal').addEventListener('click', (e) => {
-                    if (e.target === e.currentTarget) {
-                        this.closeCustomerModal();
-                    }
+                document.querySelectorAll('.close-modal').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const modal = e.target.closest('.modal');
+                        if (modal) modal.style.display = 'none';
+                    });
                 });
 
                 document.getElementById('customer-search').addEventListener('input', (e) => {
@@ -933,11 +996,17 @@
                         const customersData = snapshot.val();
                         
                         if (customersData) {
-                            this.customers = Object.values(customersData).filter(customer => customer !== null);
+                            this.customers = Object.entries(customersData)
+                                .filter(([key, customer]) => customer !== null)
+                                .map(([key, customer]) => ({
+                                    id: key,
+                                    ...customer
+                                }));
                         } else {
                             this.customers = [];
                         }
                         
+                        this.updateCustomerTransactionData();
                         this.updateStats();
                         this.renderCustomerTable(this.customers);
                     })
@@ -945,6 +1014,76 @@
                         authSystem.showToast('Error loading customers', 'error');
                         this.showDatabaseError(error);
                     });
+            },
+
+            loadAllTransactions() {
+                database.ref('laundromat/transactions').on('value', (snapshot) => {
+                    const transactionsData = snapshot.val();
+                    this.allTransactions = transactionsData ? Object.values(transactionsData) : [];
+                    this.updateCustomerTransactionData();
+                });
+            },
+
+            updateCustomerTransactionData() {
+                this.customers.forEach(customer => {
+                    // Find transactions for this customer using customerId
+                    const customerTransactions = this.allTransactions.filter(transaction => {
+                        // Primary method: Exact customer ID match
+                        if (transaction.customerId && transaction.customerId === customer.id) {
+                            return true;
+                        }
+                        
+                        // Secondary method: Name matching for legacy transactions
+                        if (transaction.customer && customer.name) {
+                            const customerName = customer.name.toLowerCase().trim();
+                            const transactionCustomer = transaction.customer.toLowerCase().trim();
+                            
+                            // Exact match
+                            if (customerName === transactionCustomer) {
+                                return true;
+                            }
+                            
+                            // Partial match
+                            if (customerName.includes(transactionCustomer) || 
+                                transactionCustomer.includes(customerName)) {
+                                return true;
+                            }
+                            
+                            // Word-based matching
+                            const customerWords = customerName.split(/\s+/);
+                            const transactionWords = transactionCustomer.split(/\s+/);
+                            
+                            return customerWords.some(word => 
+                                transactionWords.includes(word) && word.length > 2
+                            );
+                        }
+                        
+                        return false;
+                    });
+                    
+                    // Calculate financial data
+                    customer.totalSpent = customerTransactions
+                        .filter(t => t.type === 'revenue')
+                        .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+                    
+                    // Find last visit
+                    if (customerTransactions.length > 0) {
+                        const lastTransaction = customerTransactions
+                            .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                        customer.lastVisit = lastTransaction.date;
+                    } else {
+                        customer.lastVisit = customer.createdAt ? customer.createdAt.split('T')[0] : null;
+                    }
+                    
+                    // Update visit count
+                    customer.visitCount = customerTransactions.filter(t => t.type === 'revenue').length;
+                    
+                    // Store transactions for this customer
+                    customer.transactions = customerTransactions;
+                });
+                
+                this.updateStats();
+                this.renderCustomerTable(this.customers);
             },
 
             showDatabaseError(error) {
@@ -1001,30 +1140,37 @@
             },
 
             populateForm(customer) {
-                document.getElementById('customer-name').value = customer.name;
-                document.getElementById('customer-phone').value = customer.phone;
+                document.getElementById('customer-name').value = customer.name || '';
+                document.getElementById('customer-phone').value = customer.phone || '';
                 document.getElementById('customer-email').value = customer.email || '';
                 document.getElementById('customer-address').value = customer.address || '';
-                document.getElementById('customer-preferences').value = customer.preferences;
-                document.getElementById('customer-status').value = customer.status;
+                document.getElementById('customer-preferences').value = customer.preferences || 'wash-fold';
+                document.getElementById('customer-status').value = customer.status || 'active';
             },
 
             handleCustomerFormSubmit() {
                 const customerData = {
-                    name: document.getElementById('customer-name').value,
-                    phone: document.getElementById('customer-phone').value,
-                    email: document.getElementById('customer-email').value,
-                    address: document.getElementById('customer-address').value,
+                    name: document.getElementById('customer-name').value.trim(),
+                    phone: document.getElementById('customer-phone').value.trim(),
+                    email: document.getElementById('customer-email').value.trim(),
+                    address: document.getElementById('customer-address').value.trim(),
                     preferences: document.getElementById('customer-preferences').value,
                     status: document.getElementById('customer-status').value,
-                    lastVisit: new Date().toISOString().split('T')[0],
                     lastContact: new Date().toISOString(),
-                    createdAt: this.currentCustomer ? this.currentCustomer.createdAt : new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
-                    totalSpent: this.currentCustomer ? this.currentCustomer.totalSpent || 0 : 0,
-                    visitCount: this.currentCustomer ? this.currentCustomer.visitCount || 0 : 0,
                     createdBy: authSystem.currentUser.uid
                 };
+
+                // Add creation date for new customers
+                if (!this.currentCustomer) {
+                    customerData.createdAt = new Date().toISOString();
+                    customerData.totalSpent = 0;
+                    customerData.visitCount = 0;
+                } else {
+                    customerData.createdAt = this.currentCustomer.createdAt;
+                    customerData.totalSpent = this.currentCustomer.totalSpent || 0;
+                    customerData.visitCount = this.currentCustomer.visitCount || 0;
+                }
 
                 if (this.currentCustomer) {
                     this.updateCustomer(this.currentCustomer.id, customerData);
@@ -1109,17 +1255,20 @@
                         </td>
                         <td>${this.escapeHtml(customer.phone)}</td>
                         <td>
-                            <span class="status status-${customer.status}">
-                                ${customer.status.charAt(0).toUpperCase() + customer.status.slice(1)}
+                            <span class="status status-${customer.status || 'active'}">
+                                ${(customer.status || 'active').charAt(0).toUpperCase() + (customer.status || 'active').slice(1)}
                             </span>
                         </td>
-                        <td style="text-transform: capitalize;">${this.escapeHtml(customer.preferences.replace('-', ' '))}</td>
+                        <td style="text-transform: capitalize;">${this.escapeHtml((customer.preferences || 'wash-fold').replace('-', ' '))}</td>
                         <td>${this.formatDate(customer.lastVisit)}</td>
-                        <td>₦${customer.totalSpent ? customer.totalSpent.toLocaleString() : '0'}</td>
+                        <td>₦${(customer.totalSpent || 0).toLocaleString()}</td>
                         <td class="action-cell">
                             <i class="fas fa-edit action-icon action-edit" 
                                onclick="crmSystem.editCustomer('${customer.id}')" 
                                title="Edit Customer"></i>
+                            <i class="fas fa-phone action-icon action-call" 
+                               onclick="crmSystem.callCustomer('${customer.phone}')" 
+                               title="Call Customer"></i>
                             <i class="fab fa-whatsapp action-icon action-message" 
                                onclick="crmSystem.messageCustomer('${customer.phone}')" 
                                title="Message on WhatsApp"></i>
@@ -1138,14 +1287,128 @@
                 }
             },
 
+            callCustomer(phone) {
+                if (phone && phone.trim()) {
+                    window.open(`tel:${phone.replace(/\D/g, '')}`, '_self');
+                } else {
+                    authSystem.showToast('No phone number available for this customer', 'error');
+                }
+            },
+
             messageCustomer(phone) {
-                const message = "Hello! This is De Supreme Laundry House. How can we assist you today?";
-                const encodedMessage = encodeURIComponent(message);
-                window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodedMessage}`, '_blank');
+                if (phone && phone.trim()) {
+                    const message = "Hello! This is De Supreme Laundry House. How can we assist you today?";
+                    const encodedMessage = encodeURIComponent(message);
+                    window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodedMessage}`, '_blank');
+                } else {
+                    authSystem.showToast('No phone number available for this customer', 'error');
+                }
             },
 
             viewCustomerHistory(customerId) {
-                authSystem.showToast('Customer history feature coming soon!', 'info');
+                const customer = this.customers.find(c => c.id === customerId);
+                if (!customer) return;
+                
+                const customerTransactions = customer.transactions || [];
+                const modal = document.getElementById('customer-history-modal');
+                const title = document.getElementById('history-modal-title');
+                const content = document.getElementById('customer-history-content');
+                
+                title.textContent = `Transaction History - ${customer.name}`;
+                
+                if (customerTransactions.length === 0) {
+                    content.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-receipt"></i>
+                            <h3>No Transactions Found</h3>
+                            <p>This customer has no recorded transactions yet.</p>
+                            <div style="margin-top: 20px; color: var(--gray); font-size: 0.9rem;">
+                                <p><strong>Customer ID:</strong> <code>${customer.id}</code></p>
+                                <p><strong>Customer Name:</strong> "${customer.name}"</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Sort transactions by date (newest first)
+                    const sortedTransactions = [...customerTransactions].sort((a, b) => 
+                        new Date(b.date) - new Date(a.date)
+                    );
+                    
+                    // Calculate statistics
+                    const totalRevenue = customerTransactions
+                        .filter(t => t.type === 'revenue')
+                        .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+                    
+                    const totalExpenses = customerTransactions
+                        .filter(t => t.type === 'expense')
+                        .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+                    
+                    const revenueTransactions = customerTransactions.filter(t => t.type === 'revenue').length;
+                    const expenseTransactions = customerTransactions.filter(t => t.type === 'expense').length;
+                    
+                    content.innerHTML = `
+                        <div class="transaction-summary" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                                <div>
+                                    <strong>Total Transactions:</strong> ${customerTransactions.length}
+                                </div>
+                                <div>
+                                    <strong>Revenue Transactions:</strong> ${revenueTransactions}
+                                </div>
+                                <div>
+                                    <strong>Expense Transactions:</strong> ${expenseTransactions}
+                                </div>
+                                <div>
+                                    <strong>Total Revenue:</strong> <span class="positive">₦${totalRevenue.toLocaleString()}</span>
+                                </div>
+                                <div>
+                                    <strong>Total Expenses:</strong> <span class="negative">₦${totalExpenses.toLocaleString()}</span>
+                                </div>
+                                <div>
+                                    <strong>Last Visit:</strong> ${this.formatDate(customer.lastVisit)}
+                                </div>
+                            </div>
+                        </div>
+                        <table class="transaction-history-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Category</th>
+                                    <th>Amount</th>
+                                    <th>Description</th>
+                                    <th>Match Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${sortedTransactions.map(transaction => {
+                                    let matchType = 'Customer ID';
+                                    if (!transaction.customerId && transaction.customer) {
+                                        matchType = 'Name Match';
+                                    }
+                                    
+                                    return `
+                                    <tr>
+                                        <td>${this.formatDate(transaction.date)}</td>
+                                        <td>
+                                            <span class="status status-${transaction.type}">
+                                                ${transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
+                                            </span>
+                                        </td>
+                                        <td style="text-transform: capitalize;">${(transaction.category || '').replace('-', ' ')}</td>
+                                        <td class="${transaction.type === 'revenue' ? 'positive' : 'negative'}">
+                                            ₦${(parseFloat(transaction.amount) || 0).toLocaleString()}
+                                        </td>
+                                        <td>${transaction.description || ''}</td>
+                                        <td><small style="color: var(--gray);">${matchType}</small></td>
+                                    </tr>
+                                `}).join('')}
+                            </tbody>
+                        </table>
+                    `;
+                }
+                
+                modal.style.display = 'flex';
             },
 
             searchCustomers(query) {
@@ -1156,7 +1419,7 @@
                 
                 const filtered = this.customers.filter(customer => 
                     customer.name.toLowerCase().includes(query.toLowerCase()) ||
-                    customer.phone.includes(query) ||
+                    (customer.phone && customer.phone.includes(query)) ||
                     (customer.email && customer.email.toLowerCase().includes(query.toLowerCase()))
                 );
                 this.renderCustomerTable(filtered);
@@ -1165,7 +1428,12 @@
             formatDate(dateString) {
                 if (!dateString) return 'Never';
                 try {
-                    return new Date(dateString).toLocaleDateString();
+                    const date = new Date(dateString);
+                    return date.toLocaleDateString('en-US', { 
+                        year: 'numeric', 
+                        month: 'short', 
+                        day: 'numeric' 
+                    });
                 } catch (e) {
                     return 'Invalid Date';
                 }
