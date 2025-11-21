@@ -330,6 +330,14 @@
             background: #27ae60;
         }
 
+        .btn-export {
+            background: #27ae60;
+        }
+
+        .btn-export:hover {
+            background: #219653;
+        }
+
         .charts-container {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
@@ -1056,6 +1064,33 @@
             color: white;
         }
 
+        /* Export Section */
+        .export-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .export-controls {
+            display: flex;
+            gap: 15px;
+            align-items: end;
+            flex-wrap: wrap;
+        }
+
+        .export-form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+
+        .export-form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
         @media (max-width: 768px) {
             .sidebar {
                 width: 70px;
@@ -1107,6 +1142,14 @@
             
             .service-performance-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .export-controls {
+                flex-direction: column;
+            }
+
+            .export-form-group {
+                min-width: 100%;
             }
         }
     </style>
@@ -1272,7 +1315,7 @@
                             <div class="scenario-selector">
                                 <div class="scenario-btn active" onclick="accounting.selectScenario('all')">I Do All Work</div>
                                 <div class="scenario-btn" onclick="accounting.selectScenario('washer')">With Washer</div>
-                                <div class="scenario-btn" onclick="accounting.selectScenario('ironer')">With Ironer</div>
+                                <div class="scenario-btn" onclick="accounting.selectScenario('washer-ironer')">With Washer & Ironer</div>
                             </div>
                         </div>
                     </div>
@@ -1300,7 +1343,7 @@
                         </div>
                         
                         <div class="summary-section">
-                            <h3 class="card-title">Final Allocation After 10% Deduction</h3>
+                            <h3 class="card-title">Final Allocation After 10% Tithe</h3>
                             <div class="summary-grid">
                                 <div class="summary-card business">
                                     <div class="summary-title">Business Final Share</div>
@@ -1352,6 +1395,51 @@
                                     <div class="budget-percentage" id="dailyPercentage">0% of total</div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Section -->
+                <div class="card">
+                    <div class="section-title">
+                        <span>📊 Generate Financial Reports</span>
+                    </div>
+                    <div class="export-section">
+                        <div class="export-controls">
+                            <div class="export-form-group">
+                                <label for="export-month">Select Month</label>
+                                <select id="export-month" class="form-control">
+                                    <option value="1">January</option>
+                                    <option value="2">February</option>
+                                    <option value="3">March</option>
+                                    <option value="4">April</option>
+                                    <option value="5">May</option>
+                                    <option value="6">June</option>
+                                    <option value="7">July</option>
+                                    <option value="8">August</option>
+                                    <option value="9">September</option>
+                                    <option value="10">October</option>
+                                    <option value="11">November</option>
+                                    <option value="12">December</option>
+                                </select>
+                            </div>
+                            <div class="export-form-group">
+                                <label for="export-year">Select Year</label>
+                                <select id="export-year" class="form-control">
+                                    <option value="2024">2024</option>
+                                    <option value="2025" selected>2025</option>
+                                    <option value="2026">2026</option>
+                                </select>
+                            </div>
+                            <div class="export-form-group">
+                                <label>&nbsp;</label>
+                                <button class="btn btn-export" onclick="accounting.exportTransactions()">
+                                    <i class="fas fa-file-alt"></i> Generate P&L Statement
+                                </button>
+                            </div>
+                        </div>
+                        <div style="margin-top: 15px; color: var(--gray); font-size: 14px;">
+                            <i class="fas fa-info-circle"></i> Generates a comprehensive Profit & Loss statement with business performance analysis
                         </div>
                     </div>
                 </div>
@@ -1569,7 +1657,7 @@
                     
                     <div class="form-group">
                         <label for="goal-profit">Monthly Profit Target (₦)</label>
-                        <input type="number" id="goal-profit" class="form-control" required step="1000>
+                        <input type="number" id="goal-profit" class="form-control" required step="1000">
                     </div>
                     
                     <div class="form-actions">
@@ -1778,6 +1866,10 @@
             setDefaultDate() {
                 const today = new Date().toISOString().split('T')[0];
                 document.getElementById('trans-date').value = today;
+                
+                // Set current month in export dropdown
+                const currentMonth = new Date().getMonth() + 1;
+                document.getElementById('export-month').value = currentMonth;
             },
 
             updateGoalDisplays() {
@@ -1996,177 +2088,211 @@
                 document.getElementById('totalDisplay').textContent = `₦${totalAmount.toLocaleString('en-NG')}`;
                 document.getElementById('allocation-period').textContent = this.currentPeriod.charAt(0).toUpperCase() + this.currentPeriod.slice(1);
                 
-                // Fixed allocation percentages
-                const percentages = {
-                    all: {
-                        business: {
-                            'Direct Costs': 16.25,
-                            'Overhead': 8.25,
-                            'Business Fund': 25.0
-                        },
-                        personal: {
-                            'Management': 15.25,
-                            'Washing Labor': 25.0,
-                            'Ironing Labor': 10.25
-                        }
-                    },
-                    washer: {
-                        business: {
-                            'Direct Costs': 16.25,
-                            'Overhead': 8.25,
-                            'Business Fund': 25.0,
-                            'Washer Payment': 25.0
-                        },
-                        personal: {
-                            'Management': 15.25,
-                            'Ironing Labor': 10.25
-                        }
-                    },
-                    ironer: {
-                        business: {
-                            'Direct Costs': 16.25,
-                            'Overhead': 8.25,
-                            'Business Fund': 25.0,
-                            'Ironer Payment': 16.0
-                        },
-                        personal: {
-                            'Management': 15.25,
-                            'Washing Labor': 25.0
-                        }
-                    }
-                };
+                // Fixed allocation percentages from first structure
+                const directExpensesPercent = 8;
+                const washerPayPercent = 25;
+                const ironerPayPercent = 15;
+                const overheadPercent = 15;
+                const managerPayPercent = 20;
+                const businessSavingsPercent = 17;
 
-                const scenarioData = percentages[scenario];
-                
-                // Calculate business and personal totals BEFORE 10% deduction
-                let businessTotalBeforeDeduction = 0;
-                for (const percentage of Object.values(scenarioData.business)) {
-                    businessTotalBeforeDeduction += (totalAmount * percentage) / 100;
-                }
-                
-                let personalTotalBeforeDeduction = 0;
-                for (const percentage of Object.values(scenarioData.personal)) {
-                    personalTotalBeforeDeduction += (totalAmount * percentage) / 100;
-                }
-                
-                // Apply 10% deduction to each side separately
-                const businessDeduction = businessTotalBeforeDeduction * 0.10;
-                const personalDeduction = personalTotalBeforeDeduction * 0.10;
-                
-                const businessTotalAfterDeduction = businessTotalBeforeDeduction - businessDeduction;
-                const personalTotalAfterDeduction = personalTotalBeforeDeduction - personalDeduction;
+                // Calculate base amounts
+                const directExpenses = (totalAmount * directExpensesPercent) / 100;
+                const washerPay = (totalAmount * washerPayPercent) / 100;
+                const ironerPay = (totalAmount * ironerPayPercent) / 100;
+                const overhead = (totalAmount * overheadPercent) / 100;
+                const managerPay = (totalAmount * managerPayPercent) / 100;
+                const businessSavings = (totalAmount * businessSavingsPercent) / 100;
 
-                // Render business breakdown
+                // Determine what goes to business vs your share based on scenario
+                let businessWasherPay = 0;
+                let businessIronerPay = 0;
+                let yourWasherPay = 0;
+                let yourIronerPay = 0;
+                
+                switch(scenario) {
+                    case 'all':
+                        // You do all work - you get both washer and ironer pay
+                        yourWasherPay = washerPay;
+                        yourIronerPay = ironerPay;
+                        break;
+                    case 'washer':
+                        // You hire washer, you do ironing
+                        businessWasherPay = washerPay;
+                        yourIronerPay = ironerPay;
+                        break;
+                    case 'washer-ironer':
+                        // You hire both washer and ironer
+                        businessWasherPay = washerPay;
+                        businessIronerPay = ironerPay;
+                        break;
+                }
+
+                // Calculate your total earnings (before tithe)
+                const yourTotalBeforeTithe = managerPay + yourWasherPay + yourIronerPay;
+                
+                // Calculate the amount to be tithed (Business Savings + Your Total Earnings)
+                const amountForTithe = businessSavings + yourTotalBeforeTithe;
+                const tithe = amountForTithe * 0.1;
+                const remainingAfterTithe = amountForTithe - tithe;
+                
+                // Split remaining between business savings and your earnings based on original ratio
+                const businessSavingsRatio = businessSavings / amountForTithe;
+                const yourEarningsRatio = yourTotalBeforeTithe / amountForTithe;
+                
+                const finalBusinessSavings = remainingAfterTithe * businessSavingsRatio;
+                const finalYourShare = remainingAfterTithe * yourEarningsRatio;
+
+                // Build business breakdown HTML
                 let businessHTML = '';
                 
-                // Show business total before deduction
                 businessHTML += `
                     <div class="breakdown-item">
-                        <span class="category">Business Total (Before 10%)</span>
-                        <span class="amount">₦${businessTotalBeforeDeduction.toLocaleString('en-NG')}</span>
-                        <span class="percentage">${(businessTotalBeforeDeduction / totalAmount * 100).toFixed(1)}%</span>
+                        <span class="category">Direct Expenses</span>
+                        <div>
+                            <span class="amount">₦${directExpenses.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="percentage">${directExpensesPercent}%</span>
+                        </div>
                     </div>
                 `;
                 
-                // Show business deduction
-                businessHTML += `
-                    <div class="breakdown-item deduction">
-                        <span class="category">10% Deduction</span>
-                        <span class="amount">-₦${businessDeduction.toLocaleString('en-NG')}</span>
-                        <span class="percentage">10%</span>
-                    </div>
-                `;
-                
-                // Calculate and show business breakdown after deduction
-                for (const [category, percentage] of Object.entries(scenarioData.business)) {
-                    const originalAmount = (totalAmount * percentage) / 100;
-                    const adjustedAmount = (originalAmount / businessTotalBeforeDeduction) * businessTotalAfterDeduction;
-                    
+                if (businessWasherPay > 0) {
                     businessHTML += `
                         <div class="breakdown-item">
-                            <span class="category">${category}</span>
-                            <span class="amount">₦${adjustedAmount.toLocaleString('en-NG')}</span>
-                            <span class="percentage">${(adjustedAmount / totalAmount * 100).toFixed(1)}%</span>
+                            <span class="category">Washer Pay</span>
+                            <div>
+                                <span class="amount">₦${businessWasherPay.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                <span class="percentage">${washerPayPercent}%</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (businessIronerPay > 0) {
+                    businessHTML += `
+                        <div class="breakdown-item">
+                            <span class="category">Ironer Pay</span>
+                            <div>
+                                <span class="amount">₦${businessIronerPay.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                <span class="percentage">${ironerPayPercent}%</span>
+                            </div>
                         </div>
                     `;
                 }
                 
                 businessHTML += `
+                    <div class="breakdown-item">
+                        <span class="category">Overhead Cover</span>
+                        <div>
+                            <span class="amount">₦${overhead.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="percentage">${overheadPercent}%</span>
+                        </div>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="category">Business Savings (Before Tithe)</span>
+                        <div>
+                            <span class="amount">₦${businessSavings.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="percentage">${businessSavingsPercent}%</span>
+                        </div>
+                    </div>
                     <div class="breakdown-item final-total">
-                        <span class="category">Business Final Total</span>
-                        <span class="amount">₦${businessTotalAfterDeduction.toLocaleString('en-NG')}</span>
-                        <span class="percentage">${(businessTotalAfterDeduction / totalAmount * 100).toFixed(1)}%</span>
+                        <span class="category">FINAL BUSINESS SAVINGS</span>
+                        <div>
+                            <span class="amount">₦${finalBusinessSavings.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="percentage">${(finalBusinessSavings / totalAmount * 100).toFixed(1)}%</span>
+                        </div>
                     </div>
                 `;
                 
                 document.getElementById('businessBreakdown').innerHTML = businessHTML;
 
-                // Render personal breakdown
+                // Build personal breakdown HTML
                 let personalHTML = '';
                 
-                // Show personal total before deduction
                 personalHTML += `
                     <div class="breakdown-item">
-                        <span class="category">Your Total (Before 10%)</span>
-                        <span class="amount">₦${personalTotalBeforeDeduction.toLocaleString('en-NG')}</span>
-                        <span class="percentage">${(personalTotalBeforeDeduction / totalAmount * 100).toFixed(1)}%</span>
+                        <span class="category">Manager's Pay</span>
+                        <div>
+                            <span class="amount">₦${managerPay.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="percentage">${managerPayPercent}%</span>
+                        </div>
                     </div>
                 `;
                 
-                // Show personal deduction
-                personalHTML += `
-                    <div class="breakdown-item deduction">
-                        <span class="category">10% Deduction</span>
-                        <span class="amount">-₦${personalDeduction.toLocaleString('en-NG')}</span>
-                        <span class="percentage">10%</span>
-                    </div>
-                `;
-                
-                // Calculate and show personal breakdown after deduction
-                for (const [category, percentage] of Object.entries(scenarioData.personal)) {
-                    const originalAmount = (totalAmount * percentage) / 100;
-                    const adjustedAmount = (originalAmount / personalTotalBeforeDeduction) * personalTotalAfterDeduction;
-                    
+                if (yourWasherPay > 0) {
                     personalHTML += `
                         <div class="breakdown-item">
-                            <span class="category">${category}</span>
-                            <span class="amount">₦${adjustedAmount.toLocaleString('en-NG')}</span>
-                            <span class="percentage">${(adjustedAmount / totalAmount * 100).toFixed(1)}%</span>
+                            <span class="category">Your Washer Pay</span>
+                            <div>
+                                <span class="amount">₦${yourWasherPay.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                <span class="percentage">${washerPayPercent}%</span>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (yourIronerPay > 0) {
+                    personalHTML += `
+                        <div class="breakdown-item">
+                            <span class="category">Your Ironer Pay</span>
+                            <div>
+                                <span class="amount">₦${yourIronerPay.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                <span class="percentage">${ironerPayPercent}%</span>
+                            </div>
                         </div>
                     `;
                 }
                 
                 personalHTML += `
+                    <div class="breakdown-item total">
+                        <span class="category">Your Total (Before Tithe)</span>
+                        <div>
+                            <span class="amount">₦${yourTotalBeforeTithe.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="percentage">${(yourTotalBeforeTithe / totalAmount * 100).toFixed(1)}%</span>
+                        </div>
+                    </div>
+                    <div class="breakdown-item deduction">
+                        <span class="category">10% Tithe (From Business Savings + Your Total)</span>
+                        <div>
+                            <span class="amount">-₦${tithe.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="percentage">10%</span>
+                        </div>
+                    </div>
                     <div class="breakdown-item final-total">
-                        <span class="category">Your Final Total</span>
-                        <span class="amount">₦${personalTotalAfterDeduction.toLocaleString('en-NG')}</span>
-                        <span class="percentage">${(personalTotalAfterDeduction / totalAmount * 100).toFixed(1)}%</span>
+                        <span class="category">YOUR FINAL PAY</span>
+                        <div>
+                            <span class="amount">₦${finalYourShare.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <span class="percentage">${(finalYourShare / totalAmount * 100).toFixed(1)}%</span>
+                        </div>
                     </div>
                 `;
                 
                 document.getElementById('personalBreakdown').innerHTML = personalHTML;
 
                 // Update summary section
-                document.getElementById('businessFinalAmount').textContent = `₦${businessTotalAfterDeduction.toLocaleString('en-NG')}`;
-                document.getElementById('businessFinalPercentage').textContent = `${((businessTotalAfterDeduction / totalAmount) * 100).toFixed(1)}% of total`;
+                const businessFinalTotal = directExpenses + overhead + businessWasherPay + businessIronerPay + finalBusinessSavings;
+                const personalFinalTotal = finalYourShare;
                 
-                document.getElementById('personalFinalAmount').textContent = `₦${personalTotalAfterDeduction.toLocaleString('en-NG')}`;
-                document.getElementById('personalFinalPercentage').textContent = `${((personalTotalAfterDeduction / totalAmount) * 100).toFixed(1)}% of total`;
+                document.getElementById('businessFinalAmount').textContent = `₦${businessFinalTotal.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                document.getElementById('businessFinalPercentage').textContent = `${(businessFinalTotal / totalAmount * 100).toFixed(1)}% of total`;
+                
+                document.getElementById('personalFinalAmount').textContent = `₦${personalFinalTotal.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                document.getElementById('personalFinalPercentage').textContent = `${(personalFinalTotal / totalAmount * 100).toFixed(1)}% of total`;
 
                 // Transfer Instructions
                 let personalTransfersHTML = '';
                 let businessTransfersHTML = '';
                 
                 // Personal transfers
-                const totalTithes = businessDeduction + personalDeduction;
-                const needsAllocation = personalTotalAfterDeduction * 0.3;
-                const savingsAllocation = personalTotalAfterDeduction * 0.2;
-                const personalTransferTotal = totalTithes + needsAllocation;
+                const needsAllocation = finalYourShare * 0.3;
+                const savingsAllocation = finalYourShare * 0.2;
+                const dailyAllocation = finalYourShare * 0.5;
+                const personalTransferTotal = tithe + needsAllocation;
                 
                 personalTransfersHTML += `
                     <div class="transfer-item">
-                        <span class="transfer-destination">Two Tithes (10% from both sides)</span>
-                        <span class="transfer-amount">₦${totalTithes.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        <span class="transfer-destination">Tithe (10% from Business Savings + Your Earnings)</span>
+                        <span class="transfer-amount">₦${tithe.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                     <div class="transfer-item">
                         <span class="transfer-destination">Your Needs (30% of personal)</span>
@@ -2181,28 +2307,24 @@
                 document.getElementById('personalTransfers').innerHTML = personalTransfersHTML;
                 
                 // Business transfers
-                const directCosts = (scenarioData.business['Direct Costs'] / 100 * totalAmount / businessTotalBeforeDeduction) * businessTotalAfterDeduction;
-                const overhead = (scenarioData.business['Overhead'] / 100 * totalAmount / businessTotalBeforeDeduction) * businessTotalAfterDeduction;
-                const businessFund = (scenarioData.business['Business Fund'] / 100 * totalAmount / businessTotalBeforeDeduction) * businessTotalAfterDeduction;
-                
-                // Calculate business expenses total (Business Fund + Direct Costs + Overhead)
-                const businessExpensesTotal = businessFund + directCosts + overhead;
+                const businessExpensesTotal = directExpenses + overhead + businessWasherPay + businessIronerPay;
+                const businessTransferTotal = businessExpensesTotal + finalBusinessSavings;
                 
                 businessTransfersHTML += `
                     <div class="transfer-item">
-                        <span class="transfer-destination">Business Fund + Direct Costs + Overhead</span>
-                        <span class="transfer-amount">₦${businessExpensesTotal.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        <span class="transfer-destination">Business Expenses + Savings</span>
+                        <span class="transfer-amount">₦${businessTransferTotal.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                     <div class="transfer-item total">
                         <span class="transfer-destination">TOTAL TO OPAY 2</span>
-                        <span class="transfer-amount">₦${businessExpensesTotal.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        <span class="transfer-amount">₦${businessTransferTotal.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                     <div class="transfer-item">
-                        <span class="transfer-destination">Business Fund to Safebox</span>
-                        <span class="transfer-amount">₦${businessFund.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                        <span class="transfer-destination">Business Savings to Safebox</span>
+                        <span class="transfer-amount">₦${finalBusinessSavings.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                     <div class="transfer-item">
-                        <span class="transfer-destination">Savings to OPAY 1 Safebox</span>
+                        <span class="transfer-destination">Personal Savings to OPAY 1</span>
                         <span class="transfer-amount">₦${savingsAllocation.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
                     </div>
                 `;
@@ -2210,18 +2332,14 @@
                 document.getElementById('businessTransfers').innerHTML = businessTransfersHTML;
 
                 // Render personal budget
-                const needsAmount = personalTotalAfterDeduction * 0.30;
-                const savingsAmount = personalTotalAfterDeduction * 0.20;
-                const dailyAmount = personalTotalAfterDeduction * 0.50;
-
-                document.getElementById('needsAmount').textContent = `₦${needsAmount.toLocaleString('en-NG')}`;
-                document.getElementById('needsPercentage').textContent = `${((needsAmount / totalAmount) * 100).toFixed(1)}% of total`;
+                document.getElementById('needsAmount').textContent = `₦${needsAllocation.toLocaleString('en-NG')}`;
+                document.getElementById('needsPercentage').textContent = `${((needsAllocation / totalAmount) * 100).toFixed(1)}% of total`;
                 
-                document.getElementById('savingsAmount').textContent = `₦${savingsAmount.toLocaleString('en-NG')}`;
-                document.getElementById('savingsPercentage').textContent = `${((savingsAmount / totalAmount) * 100).toFixed(1)}% of total`;
+                document.getElementById('savingsAmount').textContent = `₦${savingsAllocation.toLocaleString('en-NG')}`;
+                document.getElementById('savingsPercentage').textContent = `${((savingsAllocation / totalAmount) * 100).toFixed(1)}% of total`;
                 
-                document.getElementById('dailyAmount').textContent = `₦${dailyAmount.toLocaleString('en-NG')}`;
-                document.getElementById('dailyPercentage').textContent = `${((dailyAmount / totalAmount) * 100).toFixed(1)}% of total`;
+                document.getElementById('dailyAmount').textContent = `₦${dailyAllocation.toLocaleString('en-NG')}`;
+                document.getElementById('dailyPercentage').textContent = `${((dailyAllocation / totalAmount) * 100).toFixed(1)}% of total`;
             },
 
             loadDataFromFirebase() {
@@ -2834,6 +2952,168 @@
                 document.querySelectorAll('.analytics-tab-content').forEach(c => c.classList.remove('active'));
                 event.target.classList.add('active');
                 document.getElementById(`${tab}-charts`).classList.add('active');
+            },
+
+            exportTransactions() {
+                const month = parseInt(document.getElementById('export-month').value);
+                const year = parseInt(document.getElementById('export-year').value);
+                
+                // Filter transactions for selected month and year
+                const filteredTransactions = this.transactions.filter(trans => {
+                    const transDate = new Date(trans.date);
+                    return transDate.getMonth() + 1 === month && transDate.getFullYear() === year;
+                });
+                
+                if (filteredTransactions.length === 0) {
+                    this.showToast('No transactions found for the selected period', 'error');
+                    return;
+                }
+                
+                // Calculate financial summary
+                const revenueTransactions = filteredTransactions.filter(t => t.type === 'revenue');
+                const expenseTransactions = filteredTransactions.filter(t => t.type === 'expense');
+                
+                const totalRevenue = revenueTransactions.reduce((sum, t) => sum + t.amount, 0);
+                const totalExpenses = expenseTransactions.reduce((sum, t) => sum + t.amount, 0);
+                const netProfit = totalRevenue - totalExpenses;
+                const profitMargin = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+                
+                // Calculate revenue by category
+                const revenueByCategory = {};
+                revenueTransactions.forEach(trans => {
+                    const category = trans.category;
+                    revenueByCategory[category] = (revenueByCategory[category] || 0) + trans.amount;
+                });
+                
+                // Calculate expenses by category
+                const expensesByCategory = {};
+                expenseTransactions.forEach(trans => {
+                    const category = trans.category;
+                    expensesByCategory[category] = (expensesByCategory[category] || 0) + trans.amount;
+                });
+                
+                // Create comprehensive financial report
+                let csvContent = 'PROFIT & LOSS STATEMENT\n';
+                csvContent += `For Period: ${this.getMonthName(month)} ${year}\n`;
+                csvContent += `Generated on: ${new Date().toLocaleDateString()}\n\n`;
+                
+                // Revenue Section
+                csvContent += 'REVENUE\n';
+                csvContent += 'Category,Amount,Percentage\n';
+                
+                Object.entries(revenueByCategory).forEach(([category, amount]) => {
+                    const percentage = totalRevenue > 0 ? (amount / totalRevenue * 100).toFixed(1) : '0.0';
+                    csvContent += `${this.formatCategoryName(category)},₦${amount.toLocaleString()},${percentage}%\n`;
+                });
+                
+                csvContent += `TOTAL REVENUE,₦${totalRevenue.toLocaleString()},100%\n\n`;
+                
+                // Expenses Section
+                csvContent += 'EXPENSES\n';
+                csvContent += 'Category,Amount,Percentage\n';
+                
+                Object.entries(expensesByCategory).forEach(([category, amount]) => {
+                    const percentage = totalExpenses > 0 ? (amount / totalExpenses * 100).toFixed(1) : '0.0';
+                    csvContent += `${this.formatCategoryName(category)},₦${amount.toLocaleString()},${percentage}%\n`;
+                });
+                
+                csvContent += `TOTAL EXPENSES,₦${totalExpenses.toLocaleString()},100%\n\n`;
+                
+                // Summary Section
+                csvContent += 'FINANCIAL SUMMARY\n';
+                csvContent += 'Item,Amount\n';
+                csvContent += `Total Revenue,₦${totalRevenue.toLocaleString()}\n`;
+                csvContent += `Total Expenses,₦${totalExpenses.toLocaleString()}\n`;
+                csvContent += `Net Profit/Loss,₦${netProfit.toLocaleString()}\n`;
+                csvContent += `Profit Margin,${profitMargin.toFixed(1)}%\n\n`;
+                
+                // Detailed Transactions
+                csvContent += 'DETAILED TRANSACTIONS\n';
+                csvContent += 'Date,Type,Customer,Category,Amount,Description\n';
+                
+                // Sort transactions by date
+                const sortedTransactions = [...filteredTransactions].sort((a, b) => 
+                    new Date(a.date) - new Date(b.date)
+                );
+                
+                sortedTransactions.forEach(trans => {
+                    let customerName = 'N/A';
+                    if (trans.customerId && this.customers[trans.customerId]) {
+                        customerName = this.customers[trans.customerId].name;
+                    } else if (trans.customer) {
+                        customerName = trans.customer;
+                    }
+                    
+                    const row = [
+                        new Date(trans.date).toLocaleDateString(),
+                        trans.type.toUpperCase(),
+                        `"${customerName.replace(/"/g, '""')}"`,
+                        this.formatCategoryName(trans.category),
+                        trans.amount,
+                        `"${(trans.description || '').replace(/"/g, '""')}"`
+                    ];
+                    
+                    csvContent += row.join(',') + '\n';
+                });
+                
+                // Business Performance Indicators
+                csvContent += '\nBUSINESS PERFORMANCE INDICATORS\n';
+                csvContent += 'Metric,Value,Status\n';
+                
+                const revenuePerDay = totalRevenue / new Date(year, month, 0).getDate();
+                const averageTransaction = totalRevenue / revenueTransactions.length || 0;
+                
+                csvContent += `Revenue per Day,₦${Math.round(revenuePerDay).toLocaleString()},\n`;
+                csvContent += `Average Transaction,₦${Math.round(averageTransaction).toLocaleString()},\n`;
+                csvContent += `Total Transactions,${filteredTransactions.length},\n`;
+                csvContent += `Revenue Transactions,${revenueTransactions.length},\n`;
+                csvContent += `Expense Transactions,${expenseTransactions.length},\n`;
+                
+                // Profitability Assessment
+                csvContent += '\nPROFITABILITY ASSESSMENT\n';
+                csvContent += 'Range,Status,Your Business\n';
+                csvContent += `>20%,Excellent,${profitMargin > 20 ? '✓' : ''}\n`;
+                csvContent += `15-20%,Good,${profitMargin >= 15 && profitMargin <= 20 ? '✓' : ''}\n`;
+                csvContent += `10-15%,Fair,${profitMargin >= 10 && profitMargin < 15 ? '✓' : ''}\n`;
+                csvContent += `<10%,Needs Improvement,${profitMargin < 10 ? '✓' : ''}\n`;
+                
+                // Create download link
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', `profit-loss-statement-${this.getMonthName(month).toLowerCase()}-${year}.csv`);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                this.showToast(`Generated P&L statement for ${this.getMonthName(month)} ${year}`, 'success');
+            },
+
+            // Helper function to format category names
+            formatCategoryName(category) {
+                const categoryMap = {
+                    'wash-fold': 'Wash & Fold',
+                    'dry-cleaning': 'Dry Cleaning',
+                    'delivery': 'Delivery Service',
+                    'ironing': 'Ironing Service',
+                    'utilities': 'Utilities',
+                    'staff': 'Staff Salaries',
+                    'maintenance': 'Maintenance',
+                    'rent': 'Rent',
+                    'other': 'Other Expenses'
+                };
+                return categoryMap[category] || category;
+            },
+
+            // Helper function to get month name
+            getMonthName(monthNumber) {
+                const months = [
+                    'January', 'February', 'March', 'April', 'May', 'June',
+                    'July', 'August', 'September', 'October', 'November', 'December'
+                ];
+                return months[monthNumber - 1];
             },
 
             showToast(message, type = 'info') {
