@@ -401,6 +401,16 @@
             color: white;
         }
 
+        .action-notes {
+            background: #fff8e1;
+            color: #ff9800;
+        }
+
+        .action-notes:hover {
+            background: #ff9800;
+            color: white;
+        }
+
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -492,6 +502,13 @@
             font-size: 14px;
         }
 
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+            font-family: inherit;
+            line-height: 1.5;
+        }
+
         .form-control:focus {
             border-color: var(--primary);
             outline: none;
@@ -548,6 +565,56 @@
         .negative {
             color: var(--danger);
             font-weight: bold;
+        }
+
+        .notes-container {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .notes-list {
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .note-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .note-author {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .note-date {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        .note-content {
+            color: #333;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .no-notes {
+            text-align: center;
+            color: var(--gray);
+            padding: 30px;
+            font-style: italic;
         }
 
         @media (max-width: 768px) {
@@ -715,6 +782,10 @@
                     <label for="customer-address">Address</label>
                     <input type="text" class="form-control" id="customer-address" placeholder="Street address, city, state">
                 </div>
+                <div class="form-group">
+                    <label for="customer-notes">Customer Notes (How they want to be served)</label>
+                    <textarea class="form-control" id="customer-notes" placeholder="Add notes about this customer. For example: 'Prefers eco-friendly detergent, likes shirts starched, always asks for extra hangers, delivers on Tuesdays...'"></textarea>
+                </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="customer-preferences">Service Preferences</label>
@@ -722,6 +793,7 @@
                             <option value="wash-fold">Wash & Fold</option>
                             <option value="dry-cleaning">Dry Cleaning</option>
                             <option value="ironing">Ironing</option>
+                            <option value="combo">Combo Service</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -739,6 +811,19 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Customer Notes Modal -->
+    <div class="modal" id="customer-notes-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="notes-modal-title">Customer Notes</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div id="notes-modal-content">
+                <!-- Notes content will be loaded here -->
+            </div>
         </div>
     </div>
 
@@ -942,7 +1027,7 @@
             }
         };
 
-        // Enhanced CRM System with Unified Customer Data
+        // Enhanced CRM System with Unified Customer Data and Notes
         const crmSystem = {
             currentCustomer: null,
             customers: [],
@@ -1144,6 +1229,7 @@
                 document.getElementById('customer-phone').value = customer.phone || '';
                 document.getElementById('customer-email').value = customer.email || '';
                 document.getElementById('customer-address').value = customer.address || '';
+                document.getElementById('customer-notes').value = customer.notes || '';
                 document.getElementById('customer-preferences').value = customer.preferences || 'wash-fold';
                 document.getElementById('customer-status').value = customer.status || 'active';
             },
@@ -1154,6 +1240,7 @@
                     phone: document.getElementById('customer-phone').value.trim(),
                     email: document.getElementById('customer-email').value.trim(),
                     address: document.getElementById('customer-address').value.trim(),
+                    notes: document.getElementById('customer-notes').value.trim(),
                     preferences: document.getElementById('customer-preferences').value,
                     status: document.getElementById('customer-status').value,
                     lastContact: new Date().toISOString(),
@@ -1252,6 +1339,7 @@
                         <td>
                             <div style="font-weight: 600;">${this.escapeHtml(customer.name)}</div>
                             <div style="font-size: 0.8rem; color: var(--gray);">${this.escapeHtml(customer.email || 'No email')}</div>
+                            ${customer.notes ? '<div style="font-size: 0.75rem; color: #666; margin-top: 5px;"><i class="fas fa-sticky-note"></i> Has notes</div>' : ''}
                         </td>
                         <td>${this.escapeHtml(customer.phone)}</td>
                         <td>
@@ -1266,6 +1354,9 @@
                             <i class="fas fa-edit action-icon action-edit" 
                                onclick="crmSystem.editCustomer('${customer.id}')" 
                                title="Edit Customer"></i>
+                            <i class="fas fa-sticky-note action-icon action-notes" 
+                               onclick="crmSystem.viewCustomerNotes('${customer.id}')" 
+                               title="View/Add Notes"></i>
                             <i class="fas fa-phone action-icon action-call" 
                                onclick="crmSystem.callCustomer('${customer.phone}')" 
                                title="Call Customer"></i>
@@ -1284,6 +1375,118 @@
                 const customer = this.customers.find(c => c.id === customerId);
                 if (customer) {
                     this.openCustomerModal(customer);
+                }
+            },
+
+            viewCustomerNotes(customerId) {
+                const customer = this.customers.find(c => c.id === customerId);
+                if (!customer) return;
+                
+                const modal = document.getElementById('customer-notes-modal');
+                const title = document.getElementById('notes-modal-title');
+                const content = document.getElementById('notes-modal-content');
+                
+                title.textContent = `Customer Notes - ${customer.name}`;
+                
+                // Load existing notes from database
+                this.loadCustomerNotes(customer.id).then(notes => {
+                    content.innerHTML = `
+                        <div class="notes-container">
+                            <div class="form-group">
+                                <label for="new-note">Add New Note</label>
+                                <textarea class="form-control" id="new-note" placeholder="Enter notes about how this customer wants to be served, preferences, special instructions, etc." rows="4"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <button class="btn btn-secondary" onclick="crmSystem.addNoteToCustomer('${customer.id}')" style="width: 100%;">
+                                    <i class="fas fa-plus"></i> Add Note
+                                </button>
+                            </div>
+                            
+                            <h4 style="margin-top: 25px; color: var(--dark);">Previous Notes</h4>
+                            <div class="notes-list">
+                                ${notes.length > 0 ? 
+                                    notes.map(note => `
+                                        <div class="note-item">
+                                            <div class="note-header">
+                                                <span class="note-author">${note.author || 'Staff'}</span>
+                                                <span class="note-date">${this.formatDate(note.timestamp)}</span>
+                                            </div>
+                                            <div class="note-content">${this.escapeHtml(note.content)}</div>
+                                        </div>
+                                    `).join('') : 
+                                    '<div class="no-notes">No notes yet. Add the first note above.</div>'
+                                }
+                            </div>
+                            
+                            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #eee; color: var(--gray); font-size: 0.85rem;">
+                                <p><strong>Tips:</strong> Use notes to record customer preferences like detergent allergies, folding preferences, delivery times, special requests, or any other important details.</p>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                modal.style.display = 'flex';
+            },
+
+            async loadCustomerNotes(customerId) {
+                try {
+                    const snapshot = await database.ref(`laundromat/customer_notes/${customerId}`).once('value');
+                    const notesData = snapshot.val();
+                    
+                    if (notesData) {
+                        return Object.values(notesData)
+                            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    }
+                    return [];
+                } catch (error) {
+                    console.error('Error loading notes:', error);
+                    return [];
+                }
+            },
+
+            async addNoteToCustomer(customerId) {
+                const noteText = document.getElementById('new-note').value.trim();
+                
+                if (!noteText) {
+                    authSystem.showToast('Please enter a note', 'error');
+                    return;
+                }
+                
+                const customer = this.customers.find(c => c.id === customerId);
+                if (!customer) return;
+                
+                const noteId = 'note-' + Date.now();
+                const noteData = {
+                    id: noteId,
+                    customerId: customerId,
+                    customerName: customer.name,
+                    content: noteText,
+                    author: authSystem.currentUser.email.split('@')[0],
+                    timestamp: new Date().toISOString()
+                };
+                
+                try {
+                    await database.ref(`laundromat/customer_notes/${customerId}/${noteId}`).set(noteData);
+                    
+                    // Also update the main customer record with a notes summary
+                    await database.ref(`${this.databasePath}/${customerId}/notes`).set(noteText);
+                    
+                    // Update local customer data
+                    const customerIndex = this.customers.findIndex(c => c.id === customerId);
+                    if (customerIndex !== -1) {
+                        this.customers[customerIndex].notes = noteText;
+                    }
+                    
+                    authSystem.showToast('Note added successfully!', 'success');
+                    document.getElementById('new-note').value = '';
+                    
+                    // Refresh the notes view
+                    this.viewCustomerNotes(customerId);
+                    
+                    // Update the table to show note indicator
+                    this.renderCustomerTable(this.customers);
+                } catch (error) {
+                    authSystem.showToast('Error adding note: ' + error.message, 'error');
                 }
             },
 
@@ -1420,7 +1623,8 @@
                 const filtered = this.customers.filter(customer => 
                     customer.name.toLowerCase().includes(query.toLowerCase()) ||
                     (customer.phone && customer.phone.includes(query)) ||
-                    (customer.email && customer.email.toLowerCase().includes(query.toLowerCase()))
+                    (customer.email && customer.email.toLowerCase().includes(query.toLowerCase())) ||
+                    (customer.notes && customer.notes.toLowerCase().includes(query.toLowerCase()))
                 );
                 this.renderCustomerTable(filtered);
             },
