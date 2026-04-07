@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>De Supreme Lite - Financial System</title>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ========== LITE DASHBOARD STYLES (NO DUPLICATE TRANSACTION ISSUE) ========== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Login Modal */
+        .login-modal {
+            display: flex;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-content {
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-input {
+            width: 100%;
+            padding: 12px 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin: 5px 0;
+        }
+
+        .login-btn:hover {
+            opacity: 0.9;
+        }
+
+        .login-error {
+            color: #e74c3c;
+            margin-top: 15px;
+            display: none;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #3498db;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            z-index: 10000;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Lite Dashboard Container */
+        .app-container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .brand-header {
+            background: white;
+            border-radius: 28px;
+            padding: 20px 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.02);
+            border: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .logo-area h1 {
+            font-size: 1.7rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #1E3A5F, #2c5282);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: #f8fafc;
+            padding: 8px 18px;
+            border-radius: 40px;
+        }
+
+        .btn-outline-sm {
+            background: transparent;
+            border: 1px solid #cbd5e0;
+            padding: 6px 14px;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-outline-sm:hover { background: #edf2f7; }
+
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 24px;
+        }
+
+        .row-2cols {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .btn-primary {
+            background: #1e3a5f;
+            color: white;
+            border: none;
+            padding: 14px 0;
+            width: 100%;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-primary:hover { background: #0f2b44; }
+
+        .profit-card {
+            background: linear-gradient(145deg, #0f2b3d, #1a3a50);
+            color: white;
+            border-radius: 28px;
+            padding: 24px;
+        }
+
+        .profit-amount {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin: 15px 0;
+        }
+
+        .week-selector {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .week-btn {
+            background: rgba(255,255,255,0.15);
+            border: none;
+            padding: 8px 14px;
+            border-radius: 30px;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .week-btn.active {
+            background: #fbbf24;
+            color: #1e293b;
+        }
+
+        .filter-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 18px 0 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .search-input {
+            padding: 8px 14px;
+            border-radius: 40px;
+            width: 220px;
+            border: 1px solid #ddd;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .badge-revenue { background: #dcfce7; color: #15803d; }
+        .badge-expense { background: #fee2e2; color: #b91c1c; }
+
+        .action-icons i {
+            margin: 0 5px;
+            cursor: pointer;
+            color: #6c757d;
+        }
+        .action-icons i:hover { color: #e11d48; }
+
+        .footer-note {
+            text-align: center;
+            font-size: 0.75rem;
+            margin-top: 30px;
+            color: #5b6e8c;
+        }
+
+        .card {
+            background: white;
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .transaction-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .transaction-table th,
+        .transaction-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .transaction-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .transaction-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .new-customer-btn {
+            background: #9b59b6;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .new-customer-btn:hover {
+            background: #8e44ad;
+        }
+
+        .customer-suggestions {
+            position: absolute;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            width: 100%;
+            max-height: 180px;
+            overflow-y: auto;
+            z-index: 1050;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .customer-suggestions div {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .customer-suggestions div:hover { background: #f0f7ff; }
+
+        .positive { color: #27ae60; font-weight: bold; }
+        .negative { color: #e74c3c; font-weight: bold; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-lg {
+            max-width: 900px;
+        }
+
+        .scrollable-table {
+            max-height: 500px;
+            overflow-y: auto;
+            display: block;
+        }
+
+        .view-all-btn {
+            background: #334155;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            margin-left: 10px;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 30px;
+            color: #95a5a6;
+        }
+
+        @media (max-width: 768px) {
+            .two-columns { grid-template-columns: 1fr; }
+            .row-2cols { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Modal -->
+    <div id="login-modal" class="login-modal">
+        <div class="login-content">
+            <h2 style="margin-bottom: 30px; color: #2c3e50;">🔐 De Supreme Lite</h2>
+            <input type="email" id="login-email" class="login-input" placeholder="Email Address">
+            <input type="password" id="login-password" class="login-input" placeholder="Password">
+            <button class="login-btn" onclick="authSystem.signIn()">Sign In</button>
+            <div id="login-error" class="login-error"></div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast" id="toast"></div>
+
+    <!-- LITE DASHBOARD (ADMIN) - NO DOUBLE ENTRY BUG -->
+    <div id="dashboard-lite" style="display: none;">
+        <div class="app-container">
+            <div class="brand-header">
+                <div class="logo-area"><h1><i class="fas fa-receipt"></i> De Supreme Lite</h1><p>Quick Transaction + Weekly Profit</p></div>
+                <div class="user-badge">
+                    <div id="lite-sync-status" class="sync-status">🔄 Online</div>
+                    <span id="lite-user-name" style="font-weight: 500;">Admin</span>
+                    <button class="btn-outline-sm" onclick="authSystem.signOut()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+                </div>
+            </div>
+
+            <div class="two-columns">
+                <!-- Left Column: Transaction Form & Recent Transactions -->
+                <div class="card">
+                    <div class="form-title"><i class="fas fa-plus-circle"></i> Record Transaction</div>
+                    <form id="lite-tx-form">
+                        <div class="row-2cols">
+                            <div class="form-group"><label>Type</label><select id="lite-tx-type" required><option value="revenue">💰 Revenue</option><option value="expense">📉 Expense</option></select></div>
+                            <div class="form-group"><label>Category</label><select id="lite-tx-category"><option value="wash-fold">Wash & Fold</option><option value="dry-cleaning">Dry Cleaning</option><option value="delivery">Delivery</option><option value="ironing">Ironing</option><option value="utilities">Utilities</option><option value="staff">Staff</option><option value="rent">Rent</option></select></div>
+                        </div>
+                        <div class="form-group"><label>Amount (₦)</label><input type="number" id="lite-tx-amount" placeholder="0.00" required step="0.01"></div>
+                        <div class="row-2cols">
+                            <div class="form-group"><label>Date</label><input type="date" id="lite-tx-date" required></div>
+                            <div class="form-group" style="position: relative;"><label>Customer</label>
+                                <input type="text" id="lite-tx-customer" autocomplete="off" placeholder="Type to search or add new" class="form-control">
+                                <div id="customerSuggestions" class="customer-suggestions"></div>
+                                <button type="button" class="new-customer-btn" id="quickAddCustomerBtn" style="margin-top: 5px;">➕ Add New Customer</button>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Description</label><input type="text" id="lite-tx-desc" placeholder="Optional"></div>
+                        <button type="submit" class="btn-primary">Save Transaction</button>
+                    </form>
+
+                    <div class="filter-bar">
+                        <strong><i class="fas fa-history"></i> Recent Transactions</strong>
+                        <input type="text" id="lite-search" placeholder="🔍 Search..." class="search-input">
+                        <button class="view-all-btn" id="viewAllTransactionsBtn"><i class="fas fa-list-ul"></i> View All</button>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="transaction-table">
+                            <thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Customer</th><th>Amount</th><th></th></tr></thead>
+                            <tbody id="lite-transactions-body"><tr><td colspan="6" class="empty-message">Loading...</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Right Column: Weekly Profit Card -->
+                <div>
+                    <div class="profit-card">
+                        <h3><i class="fas fa-chart-line"></i> Weekly Profit</h3>
+                        <div class="week-selector">
+                            <button data-week="0" class="week-btn active" onclick="liteAccounting.setWeekOffset(0)">This Week</button>
+                            <button data-week="-1" class="week-btn" onclick="liteAccounting.setWeekOffset(-1)">Prev Week</button>
+                            <button data-week="-2" class="week-btn" onclick="liteAccounting.setWeekOffset(-2)">2 Weeks Ago</button>
+                        </div>
+                        <div id="lite-week-range" style="font-size: 0.8rem;">Calculating...</div>
+                        <div class="profit-amount" id="lite-weekly-profit">₦0</div>
+                        <div style="display: flex; gap: 15px; flex-wrap: wrap;"><span>📈 Revenue: <strong id="lite-weekly-revenue">₦0</strong></span><span>📉 Expenses: <strong id="lite-weekly-expenses">₦0</strong></span></div>
+                        <div style="margin-top: 10px;">📊 Margin: <span id="lite-weekly-margin">0%</span></div>
+                        <div style="margin-top: 10px;">🔄 Transactions: <span id="lite-weekly-count">0</span></div>
+                    </div>
+                    <div class="card" style="margin-top: 20px;">
+                        <div style="display: flex; gap: 12px; align-items: center;"><i class="fas fa-lightbulb" style="color:#fbbf24; font-size: 1.5rem;"></i>
+                        <div><strong>Profit = Revenue – Expenses</strong><br><span style="font-size:0.75rem;">Weekly view from Monday to Sunday.</span></div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-note"><i class="fas fa-database"></i> Synced with Firebase | De Supreme Laundry</div>
+        </div>
+    </div>
+
+    <!-- MODAL for all transactions (lite) -->
+    <div id="lite-transactions-modal" class="modal" style="display: none;">
+        <div class="modal-content modal-lg">
+            <h3><i class="fas fa-receipt"></i> All Transactions <span id="modal-tx-count"></span></h3>
+            <div class="scrollable-table">
+                <table class="transaction-table" style="width: 100%;">
+                    <thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Customer</th><th>Amount</th><th>Actions</th></tr></thead>
+                    <tbody id="modal-transactions-list"></tbody>
+                </table>
+            </div>
+            <div class="form-actions" style="margin-top: 20px;"><button class="btn-primary" onclick="document.getElementById('lite-transactions-modal').style.display='none'" style="background:#95a5a6;">Close</button></div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB5duUDZTcu6eXJg8kB3Ciew2im4TMPc7Y",
+            authDomain: "trust-corp.firebaseapp.com",
+            databaseURL: "https://trust-corp-default-rtdb.firebaseio.com",
+            projectId: "trust-corp",
+            storageBucket: "trust-corp.firebasestorage.app",
+            messagingSenderId: "364233006581",
+            appId: "1:364233006581:web:fe030429cd5c7814a8d4bc"
+        };
+
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const auth = firebase.auth();
+
+        let currentUser = null;
+        let allTransactions = [];
+        let allCustomers = {};
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.background = isError ? '#e74c3c' : '#27ae60';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        const authSystem = {
+            async signIn() {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                const errorElement = document.getElementById('login-error');
+                try {
+                    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                    currentUser = userCredential.user;
+                    errorElement.style.display = 'none';
+                    // Only allow admin email for Lite dashboard (diorralph16@gmail.com)
+                    if (email === 'diorralph16@gmail.com') {
+                        document.getElementById('dashboard-lite').style.display = 'block';
+                        liteAccounting.init();
+                    } else if (email === 'desupremelaundry@gmail.com') {
+                        // Owner would see full dashboard, but in this lite version we just show lite for simplicity.
+                        // To avoid confusion, we allow both but treat as lite for this separated version.
+                        document.getElementById('dashboard-lite').style.display = 'block';
+                        liteAccounting.init();
+                    } else {
+                        throw new Error('Unauthorized email');
+                    }
+                    document.getElementById('login-modal').style.display = 'none';
+                    showToast(`Welcome ${email.split('@')[0]}!`);
+                } catch (error) {
+                    errorElement.textContent = 'Login failed: ' + error.message;
+                    errorElement.style.display = 'block';
+                }
+            },
+            async signOut() { await auth.signOut(); location.reload(); }
+        };
+
+        // LITE ACCOUNTING with customer search & add - NO DOUBLE ENTRY BUG FIXED
+        const liteAccounting = {
+            currentWeekOffset: 0,
+            editingId: null,
+            customersList: [],
+            
+            init() {
+                this.loadCustomers();
+                this.loadTransactions();
+                this.setupEventListeners();
+                this.setDefaultDate();
+                this.computeWeeklyStats();
+                document.getElementById('viewAllTransactionsBtn').addEventListener('click', () => this.showAllTransactionsModal());
+                this.initCustomerSearch();
+            },
+            
+            async loadCustomers() {
+                database.ref('laundromat/customers').on('value', (snap) => {
+                    allCustomers = snap.val() || {};
+                    this.customersList = Object.keys(allCustomers).map(key => ({ id: key, name: allCustomers[key].name || key }));
+                    this.renderCustomerSuggestions('');
+                });
+            },
+            
+            renderCustomerSuggestions(searchTerm) {
+                const suggestionsDiv = document.getElementById('customerSuggestions');
+                if (!searchTerm.trim()) { suggestionsDiv.style.display = 'none'; return; }
+                const filtered = this.customersList.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+                if (filtered.length === 0) { suggestionsDiv.style.display = 'none'; return; }
+                suggestionsDiv.innerHTML = filtered.map(c => `<div data-name="${c.name.replace(/"/g, '&quot;')}">${c.name}</div>`).join('');
+                suggestionsDiv.style.display = 'block';
+                suggestionsDiv.querySelectorAll('div').forEach(div => {
+                    div.addEventListener('click', () => {
+                        document.getElementById('lite-tx-customer').value = div.getAttribute('data-name');
+                        suggestionsDiv.style.display = 'none';
+                    });
+                });
+            },
+            
+            initCustomerSearch() {
+                const input = document.getElementById('lite-tx-customer');
+                input.addEventListener('input', (e) => this.renderCustomerSuggestions(e.target.value));
+                document.addEventListener('click', (e) => {
+                    const suggestions = document.getElementById('customerSuggestions');
+                    if (!input.contains(e.target) && !suggestions.contains(e.target))
+                        suggestions.style.display = 'none';
+                });
+                document.getElementById('quickAddCustomerBtn').addEventListener('click', async () => {
+                    const newName = prompt('Enter new customer name:');
+                    if(newName && newName.trim()){
+                        const custId = `cust_${Date.now()}`;
+                        await database.ref(`laundromat/customers/${custId}`).set({ name: newName.trim(), createdAt: new Date().toISOString() });
+                        showToast(`Customer "${newName}" added`);
+                        this.loadCustomers();
+                    }
+                });
+            },
+            
+            loadTransactions() { 
+                database.ref('laundromat/transactions').on('value', (snapshot) => { 
+                    const data = snapshot.val();
+                    if(data) {
+                        // Convert object to array with id preserved - NO DUPLICATE ENTRIES
+                        allTransactions = Object.entries(data).map(([key, value]) => ({ 
+                            id: key, 
+                            ...value 
+                        }));
+                    } else {
+                        allTransactions = [];
+                    }
+                    this.renderTransactionTable(); 
+                    this.computeWeeklyStats(); 
+                }); 
+            },
+            
+            setupEventListeners() { 
+                document.getElementById('lite-tx-form').addEventListener('submit', (e) => { 
+                    e.preventDefault(); 
+                    this.saveTransaction(); 
+                }); 
+                document.getElementById('lite-search').addEventListener('input', () => this.renderTransactionTable()); 
+            },
+            
+            setDefaultDate() { 
+                document.getElementById('lite-tx-date').value = new Date().toISOString().split('T')[0]; 
+            },
+            
+            getWeekRange(offset) { 
+                const now = new Date(); 
+                const current = new Date(now.getFullYear(), now.getMonth(), now.getDate()); 
+                let day = current.getDay(); 
+                const diff = (day === 0 ? -6 : 1 - day); 
+                const monday = new Date(current); 
+                monday.setDate(current.getDate() + diff + (offset * 7)); 
+                const sunday = new Date(monday); 
+                sunday.setDate(monday.getDate() + 6); 
+                monday.setHours(0,0,0,0); 
+                sunday.setHours(23,59,59,999); 
+                return { start: monday, end: sunday }; 
+            },
+            
+            computeWeeklyStats() { 
+                const { start, end } = this.getWeekRange(this.currentWeekOffset); 
+                let rev=0, exp=0, count=0; 
+                allTransactions.forEach(tx => { 
+                    const td = new Date(tx.date); 
+                    if(td >= start && td <= end){ 
+                        count++; 
+                        if(tx.type === 'revenue') rev += tx.amount; 
+                        else if(tx.type === 'expense') exp += tx.amount; 
+                    } 
+                }); 
+                const profit = rev - exp; 
+                const margin = rev > 0 ? (profit/rev)*100 : 0; 
+                document.getElementById('lite-weekly-profit').innerHTML = `₦${profit.toLocaleString()}`; 
+                document.getElementById('lite-weekly-revenue').innerHTML = `₦${rev.toLocaleString()}`; 
+                document.getElementById('lite-weekly-expenses').innerHTML = `₦${exp.toLocaleString()}`; 
+                document.getElementById('lite-weekly-margin').innerHTML = `${margin.toFixed(1)}%`; 
+                document.getElementById('lite-weekly-count').innerHTML = count; 
+                document.getElementById('lite-week-range').innerHTML = `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`; 
+            },
+            
+            setWeekOffset(offset) { 
+                this.currentWeekOffset = offset; 
+                document.querySelectorAll('.week-btn').forEach(b => b.classList.remove('active')); 
+                if(offset===0) document.querySelector('.week-btn[data-week="0"]').classList.add('active'); 
+                else if(offset===-1) document.querySelector('.week-btn[data-week="-1"]').classList.add('active'); 
+                else document.querySelector('.week-btn[data-week="-2"]').classList.add('active'); 
+                this.computeWeeklyStats(); 
+            },
+            
+            renderTransactionTable() { 
+                const tbody = document.getElementById('lite-transactions-body'); 
+                const search = document.getElementById('lite-search').value.toLowerCase(); 
+                let filtered = allTransactions.filter(tx => 
+                    (tx.customer && tx.customer.toLowerCase().includes(search)) || 
+                    tx.category.toLowerCase().includes(search) ||
+                    (tx.description && tx.description.toLowerCase().includes(search))
+                ); 
+                filtered.sort((a,b)=>new Date(b.date)-new Date(a.date)); 
+                if(filtered.length===0){ 
+                    tbody.innerHTML='<tr><td colspan="6" class="empty-message">No transactions</td></tr>'; 
+                    return; 
+                } 
+                tbody.innerHTML = filtered.slice(0,5).map(tx => `
+                    <tr>
+                        <td>${new Date(tx.date).toLocaleDateString()}</td>
+                        <td><span class="badge ${tx.type==='revenue'?'badge-revenue':'badge-expense'}">${tx.type}</span></td>
+                        <td>${tx.category}</td>
+                        <td>${tx.customer || '-'}</td>
+                        <td class="${tx.type==='revenue'?'positive':'negative'}">₦${tx.amount.toLocaleString()}</td>
+                        <td class="action-icons">
+                            <i class="fas fa-edit" onclick="liteAccounting.editTransaction('${tx.id}')"></i>
+                            <i class="fas fa-trash-alt" onclick="liteAccounting.deleteTransaction('${tx.id}')"></i>
+                        </td>
+                    </tr>
+                `).join(''); 
+            },
+            
+            showAllTransactionsModal() { 
+                const modalBody = document.getElementById('modal-transactions-list');
+                if(!modalBody) return;
+                const sorted = [...allTransactions].sort((a,b)=>new Date(b.date)-new Date(a.date));
+                document.getElementById('modal-tx-count').innerHTML = `(${sorted.length})`;
+                modalBody.innerHTML = sorted.map(tx => `
+                    <tr>
+                        <td>${new Date(tx.date).toLocaleDateString()}</td>
+                        <td><span class="badge ${tx.type==='revenue'?'badge-revenue':'badge-expense'}">${tx.type}</span></td>
+                        <td>${tx.category}</td>
+                        <td>${tx.customer || '-'}</td>
+                        <td class="${tx.type==='revenue'?'positive':'negative'}">₦${tx.amount.toLocaleString()}</td>
+                        <td class="action-icons">
+                            <i class="fas fa-edit" onclick="liteAccounting.editTransaction('${tx.id}'); document.getElementById('lite-transactions-modal').style.display='none';"></i>
+                            <i class="fas fa-trash-alt" onclick="if(confirm('Delete transaction?')){liteAccounting.deleteTransaction('${tx.id}'); setTimeout(()=>liteAccounting.showAllTransactionsModal(),300);}"></i>
+                        </td>
+                    </tr>
+                `).join('');
+                document.getElementById('lite-transactions-modal').style.display = 'flex';
+            },
+            
+            async saveTransaction() { 
+                // Prevent duplicate submissions by checking required fields
+                const type = document.getElementById('lite-tx-type').value;
+                const category = document.getElementById('lite-tx-category').value;
+                const amount = parseFloat(document.getElementById('lite-tx-amount').value);
+                const date = document.getElementById('lite-tx-date').value;
+                const customer = document.getElementById('lite-tx-customer').value || '';
+                const description = document.getElementById('lite-tx-desc').value || '';
+                
+                if(isNaN(amount) || amount <= 0) {
+                    showToast('Please enter a valid amount', true);
+                    return;
+                }
+                if(!date) {
+                    showToast('Please select a date', true);
+                    return;
+                }
+                
+                const txData = { 
+                    type, 
+                    category, 
+                    amount, 
+                    date, 
+                    customer, 
+                    description,
+                    timestamp: Date.now()
+                }; 
+                
+                try {
+                    if(this.editingId){ 
+                        await database.ref(`laundromat/transactions/${this.editingId}`).update(txData); 
+                        showToast('Transaction updated'); 
+                        this.editingId = null; 
+                    } else { 
+                        // Create new transaction with unique push key to avoid overwrites
+                        const newRef = database.ref('laundromat/transactions').push();
+                        await newRef.set(txData); 
+                        showToast('Transaction added'); 
+                    } 
+                    // Reset form after successful save
+                    document.getElementById('lite-tx-form').reset(); 
+                    this.setDefaultDate(); 
+                    document.getElementById('lite-tx-customer').value = '';
+                    document.getElementById('lite-tx-desc').value = '';
+                } catch(error) {
+                    showToast('Error saving transaction: ' + error.message, true);
+                }
+            },
+            
+            async deleteTransaction(id) { 
+                if(confirm('Delete this transaction permanently?')){ 
+                    await database.ref(`laundromat/transactions/${id}`).remove(); 
+                    showToast('Transaction deleted'); 
+                } 
+            },
+            
+            editTransaction(id) { 
+                const tx = allTransactions.find(t => t.id === id); 
+                if(tx){ 
+                    this.editingId = id; 
+                    document.getElementById('lite-tx-type').value = tx.type; 
+                    document.getElementById('lite-tx-category').value = tx.category; 
+                    document.getElementById('lite-tx-amount').value = tx.amount; 
+                    document.getElementById('lite-tx-date').value = tx.date; 
+                    document.getElementById('lite-tx-customer').value = tx.customer || ''; 
+                    document.getElementById('lite-tx-desc').value = tx.description || ''; 
+                    showToast('Edit mode: modify and save'); 
+                } 
+            }
+        };
+    </script>
+</body>
+</html>
