@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>De Supreme - CRM System</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    
+    <!-- Shared App Logic from app.js -->
+    <script src="app.js"></script>
+    
+    <!-- PWA Manifest & Icons -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%233498db'/%3E%3Ctext x='50' y='67' font-size='50' text-anchor='middle' fill='white' font-family='Arial'%3E🧺%3C/text%3E%3C/svg%3E">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Laundry Pro">
+    <meta name="theme-color" content="#2c3e50">
+    <meta name="mobile-web-app-capable" content="yes">
+    
+    <style>
+        :root {
+            --primary: #3498db;
+            --secondary: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --dark: #2c3e50;
+            --light: #ecf0f1;
+            --gray: #95a5a6;
+            --success: #27ae60;
+            --sidebar-width: 260px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--dark);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            overflow-y: auto;
+        }
+
+        .logo {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo h1 {
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo i {
+            font-size: 24px;
+            color: var(--primary);
+        }
+
+        .nav-links {
+            list-style: none;
+            padding: 20px 0;
+        }
+
+        .nav-links li {
+            margin-bottom: 5px;
+        }
+
+        .nav-links a {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            color: var(--light);
+            text-decoration: none;
+            transition: all 0.3s;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left: 4px solid var(--primary);
+        }
+
+        .nav-links i {
+            width: 20px;
+            text-align: center;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .header h2 {
+            color: var(--dark);
+            font-size: 28px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-info img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid var(--primary);
+        }
+
+        .user-info h4 {
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .user-info p {
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        .sync-status {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+
+        .sync-online {
+            background: #d5f4e6;
+            color: var(--success);
+        }
+
+        .sync-offline {
+            background: #fdeaea;
+            color: var(--danger);
+        }
+
+        .crm-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            padding: 25px;
+            margin-bottom: 25px;
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            color: var(--gray);
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-box input {
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 300px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.1);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+        }
+
+        .btn-secondary:hover {
+            background: #27ae60;
+        }
+
+        .customer-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .customer-table th, .customer-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .customer-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .customer-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-active {
+            background: #e8f6ef;
+            color: var(--secondary);
+        }
+
+        .status-inactive {
+            background: #fdeaea;
+            color: var(--danger);
+        }
+
+        .status-premium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .action-cell {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .action-icon {
+            padding: 8px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            font-size: 0.9rem;
+        }
+
+        .action-icon:hover {
+            transform: translateY(-2px);
+        }
+
+        .action-edit {
+            background: #e3f2fd;
+            color: var(--primary);
+        }
+
+        .action-edit:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .action-message {
+            background: #e8f5e8;
+            color: #25d366;
+        }
+
+        .action-message:hover {
+            background: #25d366;
+            color: white;
+        }
+
+        .action-view {
+            background: #f0f4ff;
+            color: #667eea;
+        }
+
+        .action-view:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .action-call {
+            background: #f0f8ff;
+            color: #007bff;
+        }
+
+        .action-call:hover {
+            background: #007bff;
+            color: white;
+        }
+
+        .action-notes {
+            background: #fff8e1;
+            color: #ff9800;
+        }
+
+        .action-notes:hover {
+            background: #ff9800;
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--gray);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-wide {
+            max-width: 800px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--gray);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+            font-family: inherit;
+            line-height: 1.5;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--dark);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .transaction-history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .transaction-history-table th, .transaction-history-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .transaction-history-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .transaction-history-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .positive {
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .negative {
+            color: var(--danger);
+            font-weight: bold;
+        }
+
+        .notes-container {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .notes-list {
+            margin-top: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .note-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .note-author {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .note-date {
+            font-size: 0.8rem;
+            color: var(--gray);
+        }
+
+        .note-content {
+            color: #333;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+
+        .no-notes {
+            text-align: center;
+            color: var(--gray);
+            padding: 30px;
+            font-style: italic;
+        }
+
+        .transaction-summary {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .transaction-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+            
+            .sidebar .logo span,
+            .sidebar .nav-links span {
+                display: none;
+            }
+            
+            .main-content {
+                margin-left: 70px;
+            }
+            
+            .crm-header {
+                flex-direction: column;
+            }
+            
+            .search-box input {
+                width: 100%;
+            }
+            
+            .action-cell {
+                flex-wrap: wrap;
+            }
+            
+            .customer-table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Main App Content (CRM only - no login modal since app.js handles auth) -->
+<div id="app-content" style="display: none;">
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="logo">
+                <h1><i class="fas fa-tshirt"></i><span>De Supreme Laundry House</span></h1>
+            </div>
+            <ul class="nav-links">
+    <li><a href="#" class="active"><i class="fas fa-users"></i> <span>Customer CRM</span></a></li>
+    <li><a href="adminTransEntry.html"><i class="fas fa-receipt"></i> <span>Transaction Entry</span></a></li>
+    <li id="finance-link-container" style="display: none;"><a href="finance.html"><i class="fas fa-chart-line"></i> <span>Financial Reports</span></a></li>
+    <li><a href="https://wa.me/2349043930196" target="_blank"><i class="fab fa-whatsapp"></i> <span>WhatsApp Business</span></a></li>
+    <li><a href="https://www.facebook.com/share/1bK1uNXQN3/" target="_blank"><i class="fab fa-facebook"></i> <span>Facebook Page</span></a></li>
+    <li><a href="#" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> <span>Sign Out</span></a></li>
+</ul>
+
+<script>
+    function handleLogout() {
+        auth.signOut().then(() => {
+            window.location.href = 'index.html';
+        });
+    }
+    
+    // Show finance link only for owner
+    auth.onAuthStateChanged((user) => {
+        if (user && user.email === 'desupremelaundry@gmail.com') {
+            const financeLink = document.getElementById('finance-link-container');
+            if (financeLink) financeLink.style.display = 'block';
+        }
+    });
+</script>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header">
+                <h2>Customer Relationship Management</h2>
+                <div class="user-info">
+                    <img src="https://ui-avatars.com/api/?name=Laundromat+Owner&background=3498db&color=fff" alt="User">
+                    <div>
+                        <h4 id="user-display-name">Loading...</h4>
+                        <p>Admin</p>
+                        <div id="sync-status" class="sync-status sync-offline">🔄 Connecting to Firebase...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="dashboard-grid">
+                <div class="card">
+                    <div class="stat-value" id="total-customers">0</div>
+                    <div class="stat-label">Total Customers</div>
+                </div>
+                <div class="card">
+                    <div class="stat-value" id="active-customers">0</div>
+                    <div class="stat-label">Active Customers</div>
+                </div>
+                <div class="card">
+                    <div class="stat-value" id="new-this-month">0</div>
+                    <div class="stat-label">New This Month</div>
+                </div>
+                <div class="card">
+                    <div class="stat-value" id="premium-customers">0</div>
+                    <div class="stat-label">Premium Customers</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="crm-header">
+                    <h3>Customer Database</h3>
+                    <div class="search-box">
+                        <input type="text" id="customer-search" placeholder="Search customers..." autocomplete="off">
+                        <button class="btn btn-secondary" id="add-customer-btn">
+                            <i class="fas fa-plus"></i> Add Customer
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Customer Table -->
+                <table class="customer-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Status</th>
+                            <th>Service</th>
+                            <th>Last Visit</th>
+                            <th>Total Spent</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customer-table-body">
+                        <tr>
+                            <td colspan="7" class="empty-state">
+                                <i class="fas fa-spinner fa-pulse"></i>
+                                <h3>Loading Customers...</h3>
+                                <p>Please wait while we load your customer data</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Customer Modal -->
+<div class="modal" id="add-customer-modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Add New Customer</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <form id="customer-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="customer-name">Full Name *</label>
+                    <input type="text" class="form-control" id="customer-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="customer-phone">Phone Number *</label>
+                    <input type="tel" class="form-control" id="customer-phone" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="customer-email">Email Address</label>
+                <input type="email" class="form-control" id="customer-email">
+            </div>
+            <div class="form-group">
+                <label for="customer-address">Address</label>
+                <input type="text" class="form-control" id="customer-address" placeholder="Street address, city, state">
+            </div>
+            <div class="form-group">
+                <label for="customer-notes">Customer Notes (How they want to be served)</label>
+                <textarea class="form-control" id="customer-notes" placeholder="Add notes about this customer. For example: 'Prefers eco-friendly detergent, likes shirts starched, always asks for extra hangers, delivers on Tuesdays...'"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="customer-preferences">Service Preferences</label>
+                    <select class="form-control" id="customer-preferences">
+                        <option value="wash-fold">Wash & Fold</option>
+                        <option value="dry-cleaning">Dry Cleaning</option>
+                        <option value="ironing">Ironing</option>
+                        <option value="combo">Combo Service</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="customer-status">Status</label>
+                    <select class="form-control" id="customer-status">
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="premium">Premium</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <button type="submit" class="btn btn-secondary" style="width: 100%;">
+                    <i class="fas fa-save"></i> Save Customer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Customer Notes Modal -->
+<div class="modal" id="customer-notes-modal">
+    <div class="modal-content modal-wide">
+        <div class="modal-header">
+            <h3 id="notes-modal-title">Customer Notes</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div id="notes-modal-content"></div>
+    </div>
+</div>
+
+<!-- Customer History Modal -->
+<div class="modal" id="customer-history-modal">
+    <div class="modal-content modal-wide">
+        <div class="modal-header">
+            <h3 id="history-modal-title">Customer Transaction History</h3>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div id="customer-history-content"></div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast" id="toast"></div>
+
+<script>
+    // Global references (from app.js)
+    let databaseRef = null;
+    let authRef = null;
+    let currentUser = null;
+    
+    // Show toast using app.js function or fallback
+    function showToastMessage(message, isError = false) {
+        if (typeof showToast === 'function') {
+            showToast(message, isError);
+        } else {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.background = isError ? '#e74c3c' : '#2ecc71';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+    }
+    
+    // Logout using app.js
+    function logout() {
+        if (typeof auth !== 'undefined' && auth) {
+            auth.signOut().then(() => {
+                window.location.href = 'index.html';
+            }).catch(() => {
+                window.location.href = 'index.html';
+            });
+        } else {
+            window.location.href = 'index.html';
+        }
+    }
+    
+    // CRM System
+    const crmSystem = {
+        currentCustomer: null,
+        customers: [],
+        allTransactions: [],
+        databasePath: 'laundromat/customers',
+        isSubmitting: false,
+        
+        init() {
+            if (!databaseRef || !authRef) {
+                setTimeout(() => this.init(), 200);
+                return;
+            }
+            this.bindEvents();
+            this.loadCustomers();
+            this.loadAllTransactions();
+        },
+        
+        bindEvents() {
+            const addBtn = document.getElementById('add-customer-btn');
+            if (addBtn) addBtn.addEventListener('click', () => this.openCustomerModal());
+            
+            const form = document.getElementById('customer-form');
+            if (form) {
+                // Remove existing listener to prevent duplicates
+                const newForm = form.cloneNode(true);
+                form.parentNode.replaceChild(newForm, form);
+                newForm.addEventListener('submit', (e) => this.handleCustomerFormSubmit(e));
+            }
+            
+            const searchInput = document.getElementById('customer-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => this.searchCustomers(e.target.value));
+            }
+            
+            document.querySelectorAll('.close-modal').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const modal = e.target.closest('.modal');
+                    if (modal) modal.style.display = 'none';
+                });
+            });
+            
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) modal.style.display = 'none';
+                });
+            });
+        },
+        
+        loadCustomers() {
+            if (!databaseRef) return;
+            
+            databaseRef.ref(this.databasePath).on('value', (snapshot) => {
+                const customersData = snapshot.val();
+                if (customersData) {
+                    this.customers = Object.entries(customersData)
+                        .filter(([key, customer]) => customer !== null)
+                        .map(([key, customer]) => ({ id: key, ...customer }));
+                } else {
+                    this.customers = [];
+                }
+                this.updateCustomerTransactionData();
+                this.updateStats();
+                this.renderCustomerTable(this.customers);
+            }, (error) => {
+                console.error('Error loading customers:', error);
+                this.showErrorInTable(error);
+            });
+        },
+        
+        loadAllTransactions() {
+            if (!databaseRef) return;
+            
+            databaseRef.ref('laundromat/transactions').on('value', (snapshot) => {
+                const transactionsData = snapshot.val();
+                this.allTransactions = transactionsData ? Object.values(transactionsData) : [];
+                this.updateCustomerTransactionData();
+            });
+        },
+        
+        updateCustomerTransactionData() {
+            this.customers.forEach(customer => {
+                const customerTransactions = this.allTransactions.filter(transaction => {
+                    if (transaction.customerId && transaction.customerId === customer.id) return true;
+                    if (transaction.customer && customer.name) {
+                        return transaction.customer.toLowerCase().trim() === customer.name.toLowerCase().trim();
+                    }
+                    return false;
+                });
+                
+                customer.totalSpent = customerTransactions
+                    .filter(t => t.type === 'revenue')
+                    .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+                
+                if (customerTransactions.length > 0) {
+                    const lastTransaction = customerTransactions
+                        .sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+                    customer.lastVisit = lastTransaction.date;
+                } else {
+                    customer.lastVisit = customer.createdAt ? customer.createdAt.split('T')[0] : null;
+                }
+                
+                customer.visitCount = customerTransactions.filter(t => t.type === 'revenue').length;
+                customer.transactions = customerTransactions;
+            });
+            
+            this.updateStats();
+            this.renderCustomerTable(this.customers);
+        },
+        
+        showErrorInTable(error) {
+            const tbody = document.getElementById('customer-table-body');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i>
+                            <h3>Database Error</h3>
+                            <p>${error.message || 'Please check your connection and try again.'}</p>
+                            <button class="btn" style="background: #3498db;" onclick="location.reload()">
+                                <i class="fas fa-sync-alt"></i> Retry
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
+        },
+        
+        openCustomerModal(customer = null) {
+            this.currentCustomer = customer;
+            const modal = document.getElementById('add-customer-modal');
+            const form = document.getElementById('customer-form');
+            
+            if (customer) {
+                modal.querySelector('h3').textContent = 'Edit Customer';
+                this.populateForm(customer);
+            } else {
+                modal.querySelector('h3').textContent = 'Add New Customer';
+                if (form) form.reset();
+            }
+            modal.style.display = 'flex';
+        },
+        
+        populateForm(customer) {
+            document.getElementById('customer-name').value = customer.name || '';
+            document.getElementById('customer-phone').value = customer.phone || '';
+            document.getElementById('customer-email').value = customer.email || '';
+            document.getElementById('customer-address').value = customer.address || '';
+            document.getElementById('customer-notes').value = customer.notes || '';
+            document.getElementById('customer-preferences').value = customer.preferences || 'wash-fold';
+            document.getElementById('customer-status').value = customer.status || 'active';
+        },
+        
+        async handleCustomerFormSubmit(e) {
+            e.preventDefault();
+            if (this.isSubmitting) return;
+            
+            this.isSubmitting = true;
+            const submitBtn = document.querySelector('#customer-form button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-pulse"></i> Saving...';
+            submitBtn.disabled = true;
+            
+            try {
+                const customerData = {
+                    name: document.getElementById('customer-name').value.trim(),
+                    phone: document.getElementById('customer-phone').value.trim(),
+                    email: document.getElementById('customer-email').value.trim(),
+                    address: document.getElementById('customer-address').value.trim(),
+                    notes: document.getElementById('customer-notes').value.trim(),
+                    preferences: document.getElementById('customer-preferences').value,
+                    status: document.getElementById('customer-status').value,
+                    updatedAt: new Date().toISOString()
+                };
+                
+                if (!customerData.name) throw new Error('Customer name is required');
+                if (!customerData.phone) throw new Error('Phone number is required');
+                
+                if (this.currentCustomer) {
+                    await databaseRef.ref(`${this.databasePath}/${this.currentCustomer.id}`).update(customerData);
+                    showToastMessage('Customer updated successfully!');
+                } else {
+                    customerData.createdAt = new Date().toISOString();
+                    customerData.totalSpent = 0;
+                    customerData.visitCount = 0;
+                    const newId = 'cust-' + Date.now() + '-' + Math.random().toString(36).substr(2, 6);
+                    await databaseRef.ref(`${this.databasePath}/${newId}`).set(customerData);
+                    showToastMessage('Customer added successfully!');
+                }
+                
+                document.getElementById('add-customer-modal').style.display = 'none';
+                this.currentCustomer = null;
+                
+            } catch (error) {
+                showToastMessage(error.message, true);
+            } finally {
+                this.isSubmitting = false;
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
+        },
+        
+        updateStats() {
+            const total = this.customers.length;
+            const active = this.customers.filter(c => c.status === 'active').length;
+            const premium = this.customers.filter(c => c.status === 'premium').length;
+            
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            const newThisMonth = this.customers.filter(c => {
+                if (!c.createdAt) return false;
+                const createdDate = new Date(c.createdAt);
+                return createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear;
+            }).length;
+            
+            const totalEl = document.getElementById('total-customers');
+            const activeEl = document.getElementById('active-customers');
+            const newEl = document.getElementById('new-this-month');
+            const premiumEl = document.getElementById('premium-customers');
+            
+            if (totalEl) totalEl.textContent = total;
+            if (activeEl) activeEl.textContent = active;
+            if (newEl) newEl.textContent = newThisMonth;
+            if (premiumEl) premiumEl.textContent = premium;
+        },
+        
+        renderCustomerTable(customers) {
+            const tbody = document.getElementById('customer-table-body');
+            if (!tbody) return;
+            
+            if (customers.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="empty-state">
+                            <i class="fas fa-users"></i>
+                            <h3>No Customers Found</h3>
+                            <p>Get started by adding your first customer</p>
+                            <button class="btn btn-secondary" onclick="crmSystem.openCustomerModal()">
+                                <i class="fas fa-plus"></i> Add First Customer
+                            </button>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = customers.map(customer => `
+                <tr>
+                    <td>
+                        <div style="font-weight: 600;">${this.escapeHtml(customer.name)}</div>
+                        <div style="font-size: 0.8rem; color: var(--gray);">${this.escapeHtml(customer.email || 'No email')}</div>
+                        ${customer.notes ? '<div style="font-size: 0.75rem; color: #666; margin-top: 5px;"><i class="fas fa-sticky-note"></i> Has notes</div>' : ''}
+                    </td>
+                    <td>${this.escapeHtml(customer.phone)}</td>
+                    <td>
+                        <span class="status status-${customer.status || 'active'}">
+                            ${((customer.status || 'active').charAt(0).toUpperCase() + (customer.status || 'active').slice(1))}
+                        </span>
+                    </td>
+                    <td style="text-transform: capitalize;">${this.escapeHtml((customer.preferences || 'wash-fold').replace('-', ' '))}</td>
+                    <td>${this.formatDate(customer.lastVisit)}</td>
+                    <td>₦${(customer.totalSpent || 0).toLocaleString()}</td>
+                    <td class="action-cell">
+                        <i class="fas fa-edit action-icon action-edit" onclick="crmSystem.editCustomer('${customer.id}')" title="Edit Customer"></i>
+                        <i class="fas fa-sticky-note action-icon action-notes" onclick="crmSystem.viewCustomerNotes('${customer.id}')" title="View/Add Notes"></i>
+                        <i class="fas fa-phone action-icon action-call" onclick="crmSystem.callCustomer('${customer.phone}')" title="Call Customer"></i>
+                        <i class="fab fa-whatsapp action-icon action-message" onclick="crmSystem.messageCustomer('${customer.phone}')" title="Message on WhatsApp"></i>
+                        <i class="fas fa-chart-line action-icon action-view" onclick="crmSystem.viewCustomerHistory('${customer.id}')" title="View History"></i>
+                    </td>
+                </tr>
+            `).join('');
+        },
+        
+        editCustomer(customerId) {
+            const customer = this.customers.find(c => c.id === customerId);
+            if (customer) this.openCustomerModal(customer);
+        },
+        
+        async viewCustomerNotes(customerId) {
+            const customer = this.customers.find(c => c.id === customerId);
+            if (!customer) return;
+            
+            const modal = document.getElementById('customer-notes-modal');
+            const title = document.getElementById('notes-modal-title');
+            const content = document.getElementById('notes-modal-content');
+            
+            title.textContent = `Customer Notes - ${customer.name}`;
+            
+            try {
+                const snapshot = await databaseRef.ref(`laundromat/customer_notes/${customerId}`).once('value');
+                const notesData = snapshot.val();
+                const notes = notesData ? Object.values(notesData).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)) : [];
+                
+                content.innerHTML = `
+                    <div class="notes-container">
+                        <div class="form-group">
+                            <label for="new-note">Add New Note</label>
+                            <textarea class="form-control" id="new-note" placeholder="Enter notes about how this customer wants to be served, preferences, special instructions, etc." rows="4"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-secondary" onclick="crmSystem.addNoteToCustomer('${customerId}')" style="width: 100%;">
+                                <i class="fas fa-plus"></i> Add Note
+                            </button>
+                        </div>
+                        <div class="notes-list">
+                            ${notes.length > 0 ? 
+                                notes.map(note => `
+                                    <div class="note-item">
+                                        <div class="note-header">
+                                            <span class="note-author">${this.escapeHtml(note.author || 'Staff')}</span>
+                                            <span class="note-date">${this.formatDate(note.timestamp)}</span>
+                                        </div>
+                                        <div class="note-content">${this.escapeHtml(note.content)}</div>
+                                    </div>
+                                `).join('') : 
+                                '<div class="no-notes">No notes yet. Add the first note above.</div>'
+                            }
+                        </div>
+                    </div>
+                `;
+                modal.style.display = 'flex';
+            } catch (error) {
+                showToastMessage('Error loading notes', true);
+            }
+        },
+        
+        async addNoteToCustomer(customerId) {
+            const noteText = document.getElementById('new-note')?.value.trim();
+            if (!noteText) {
+                showToastMessage('Please enter a note', true);
+                return;
+            }
+            
+            const customer = this.customers.find(c => c.id === customerId);
+            if (!customer) return;
+            
+            const noteId = 'note-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
+            const noteData = {
+                id: noteId,
+                customerId: customerId,
+                customerName: customer.name,
+                content: noteText,
+                author: currentUser ? currentUser.email.split('@')[0] : 'Staff',
+                timestamp: new Date().toISOString()
+            };
+            
+            try {
+                await databaseRef.ref(`laundromat/customer_notes/${customerId}/${noteId}`).set(noteData);
+                await databaseRef.ref(`${this.databasePath}/${customerId}/notes`).set(noteText);
+                
+                const customerIndex = this.customers.findIndex(c => c.id === customerId);
+                if (customerIndex !== -1) this.customers[customerIndex].notes = noteText;
+                
+                showToastMessage('Note added successfully!');
+                this.viewCustomerNotes(customerId);
+                this.renderCustomerTable(this.customers);
+            } catch (error) {
+                showToastMessage('Error adding note', true);
+            }
+        },
+        
+        callCustomer(phone) {
+            if (phone && phone.trim()) {
+                window.open(`tel:${phone.replace(/\D/g, '')}`, '_self');
+            } else {
+                showToastMessage('No phone number available', true);
+            }
+        },
+        
+        messageCustomer(phone) {
+            if (phone && phone.trim()) {
+                const message = "Hello! This is De Supreme Laundry House. How can we assist you today?";
+                window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`, '_blank');
+            } else {
+                showToastMessage('No phone number available', true);
+            }
+        },
+        
+        viewCustomerHistory(customerId) {
+            const customer = this.customers.find(c => c.id === customerId);
+            if (!customer) return;
+            
+            const customerTransactions = customer.transactions || [];
+            const modal = document.getElementById('customer-history-modal');
+            const title = document.getElementById('history-modal-title');
+            const content = document.getElementById('customer-history-content');
+            
+            title.textContent = `Transaction History - ${customer.name}`;
+            
+            if (customerTransactions.length === 0) {
+                content.innerHTML = `<div class="empty-state"><i class="fas fa-receipt"></i><h3>No Transactions Found</h3><p>This customer has no recorded transactions yet.</p></div>`;
+            } else {
+                const totalRevenue = customerTransactions.filter(t => t.type === 'revenue').reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+                const revenueCount = customerTransactions.filter(t => t.type === 'revenue').length;
+                
+                content.innerHTML = `
+                    <div class="transaction-summary">
+                        <div class="transaction-summary-grid">
+                            <div><strong>Total Transactions:</strong> ${customerTransactions.length}</div>
+                            <div><strong>Revenue Transactions:</strong> ${revenueCount}</div>
+                            <div><strong>Total Revenue:</strong> <span class="positive">₦${totalRevenue.toLocaleString()}</span></div>
+                            <div><strong>Last Visit:</strong> ${this.formatDate(customer.lastVisit)}</div>
+                        </div>
+                    </div>
+                    <table class="transaction-history-table">
+                        <thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Amount</th><th>Description</th></tr></thead>
+                        <tbody>
+                            ${customerTransactions.sort((a,b) => new Date(b.date) - new Date(a.date)).map(t => `
+                                <tr>
+                                    <td>${this.formatDate(t.date)}</td>
+                                    <td><span class="status status-${t.type}">${t.type.charAt(0).toUpperCase() + t.type.slice(1)}</span></td>
+                                    <td>${t.category || ''}</td>
+                                    <td class="${t.type === 'revenue' ? 'positive' : 'negative'}">₦${(parseFloat(t.amount) || 0).toLocaleString()}</td>
+                                    <td>${t.description || ''}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+            modal.style.display = 'flex';
+        },
+        
+        searchCustomers(query) {
+            if (!query) {
+                this.renderCustomerTable(this.customers);
+                return;
+            }
+            const filtered = this.customers.filter(c => 
+                c.name.toLowerCase().includes(query.toLowerCase()) ||
+                (c.phone && c.phone.includes(query)) ||
+                (c.email && c.email.toLowerCase().includes(query.toLowerCase()))
+            );
+            this.renderCustomerTable(filtered);
+        },
+        
+        formatDate(dateString) {
+            if (!dateString) return 'Never';
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+            } catch (e) {
+                return 'Invalid Date';
+            }
+        },
+        
+        escapeHtml(str) {
+            if (!str) return '';
+            return str.toString().replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+    };
+    
+    // Initialize with auth from app.js
+    function initCRM() {
+        if (typeof database !== 'undefined' && database && typeof auth !== 'undefined' && auth) {
+            databaseRef = database;
+            authRef = auth;
+            
+            auth.onAuthStateChanged((user) => {
+                if (!user) {
+                    window.location.href = 'index.html';
+                } else {
+                    currentUser = user;
+                    document.getElementById('app-content').style.display = 'block';
+                    document.getElementById('user-display-name').textContent = user.email.split('@')[0];
+                    const syncEl = document.getElementById('sync-status');
+                    if (syncEl) {
+                        syncEl.textContent = '✅ Live - Connected';
+                        syncEl.className = 'sync-status sync-online';
+                    }
+                    crmSystem.init();
+                }
+            });
+        } else {
+            setTimeout(initCRM, 200);
+        }
+    }
+    
+    // Make crmSystem globally available
+    window.crmSystem = crmSystem;
+    window.logout = logout;
+    
+    // Start the app
+    initCRM();
+</script>
+
+    
+    
+    
+    
+    
+    <!-- Install PWA Button (shows only on supported browsers) -->
+<div id="install-container" style="position: fixed; bottom: 20px; left: 20px; z-index: 1000; display: none;">
+    <button id="install-btn" style="background: #1e3a5f; color: white; border: none; padding: 12px 20px; border-radius: 40px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+        <i class="fas fa-download"></i> Install App
+    </button>
+</div>
+
+<script>
+    // PWA Install Prompt
+    let deferredPrompt;
+    const installContainer = document.getElementById('install-container');
+    const installBtn = document.getElementById('install-btn');
+    
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (installContainer) installContainer.style.display = 'block';
+        console.log('✅ PWA install prompt available');
+    });
+    
+    if (installBtn) {
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to install: ${outcome}`);
+                deferredPrompt = null;
+                if (installContainer) installContainer.style.display = 'none';
+            }
+        });
+    }
+    
+    // Check if already installed
+    window.addEventListener('appinstalled', () => {
+        console.log('✅ App installed successfully');
+        if (installContainer) installContainer.style.display = 'none';
+    });
+</script>
+    
+    
+    
+    
+    
+    
+    
+</body>
+</html>
