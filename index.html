@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>De Supreme Laundry</title>
     
-    <!-- PWA Manifest -->
-    <link rel="manifest" href="manifest.json">
+    <!-- PWA Manifest - USE FULL PATH -->
+    <link rel="manifest" href="/De-Supreme-Laundry-Management-System-/manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Laundry Pro">
@@ -18,7 +18,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
     
-    <!-- Font Awesome (REQUIRED for icons) -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Shared app.js -->
@@ -140,36 +140,6 @@
             to { transform: rotate(360deg); }
         }
     </style>
-
-
-
-
-
-    
-
-    <!-- In <head> section -->
-<link rel="manifest" href="/De-Supreme-Laundry-Management-System-/manifest.json">
-
-<!-- Service Worker registration (before </body>) -->
-<script>
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/De-Supreme-Laundry-Management-System-/sw.js')
-                .then(reg => console.log('✅ SW registered:', reg))
-                .catch(err => console.log('❌ SW failed:', err));
-        });
-    }
-</script>
-
-
-
-
-
-
-
-
-
-    
 </head>
 <body>
 
@@ -236,15 +206,15 @@
     });
 </script>
 
-<!-- Install PWA Button (shows only on supported browsers after login) -->
+<!-- Install PWA Button -->
 <div id="install-container" style="position: fixed; bottom: 20px; left: 20px; z-index: 1000; display: none;">
     <button id="install-btn" style="background: #1e3a5f; color: white; border: none; padding: 12px 20px; border-radius: 40px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
         <i class="fas fa-download"></i> Install App
     </button>
 </div>
 
+<!-- PWA Install Script -->
 <script>
-    // PWA Install Prompt
     let deferredPrompt;
     const installContainer = document.getElementById('install-container');
     const installBtn = document.getElementById('install-btn');
@@ -268,38 +238,22 @@
         });
     }
     
-    // Check if already installed
     window.addEventListener('appinstalled', () => {
         console.log('✅ App installed successfully');
         if (installContainer) installContainer.style.display = 'none';
     });
 </script>
 
-
-
-
-
-
-    
-
-    <!-- Service Worker Registration for PWA -->
+<!-- Service Worker Registration - ONLY ONE, USE FULL PATH -->
 <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('✅ Service Worker registered:', reg.scope))
-                .catch(err => console.log('❌ Service Worker failed:', err));
+            navigator.serviceWorker.register('/De-Supreme-Laundry-Management-System-/sw.js')
+                .then(reg => console.log('✅ SW registered:', reg))
+                .catch(err => console.log('❌ SW failed:', err));
         });
     }
 </script>
-
-
-
-
-
-
-
-    
 
 </body>
 </html>
