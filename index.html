@@ -1272,6 +1272,22 @@
 
 
 
+
+    <script>
+  // First listener - just to capture and log the event
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    console.log('📱 App can be installed - event received');
+    window.deferredPrompt = e;
+  });
+    </script>
+
+
+
+
+    
+
+
     
 <!-- Custom Install Button -->
 <script>
