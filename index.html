@@ -140,6 +140,36 @@
             to { transform: rotate(360deg); }
         }
     </style>
+
+
+
+
+
+    
+
+    <!-- In <head> section -->
+<link rel="manifest" href="/De-Supreme-Laundry-Management-System-/manifest.json">
+
+<!-- Service Worker registration (before </body>) -->
+<script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/De-Supreme-Laundry-Management-System-/sw.js')
+                .then(reg => console.log('✅ SW registered:', reg))
+                .catch(err => console.log('❌ SW failed:', err));
+        });
+    }
+</script>
+
+
+
+
+
+
+
+
+
+    
 </head>
 <body>
 
