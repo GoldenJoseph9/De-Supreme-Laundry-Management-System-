@@ -1,14 +1,14 @@
 const CACHE_NAME = 'laundry-system-v1';
 const urlsToCache = [
-  '/De-Supreme-Laundry-Management-System/',
-  '/De-Supreme-Laundry-Management-System/index.html',
-  '/De-Supreme-Laundry-Management-System/adminTransEntry.html',
-  '/De-Supreme-Laundry-Management-System/finance.html',
-  '/De-Supreme-Laundry-Management-System/finance2.html',
-  '/De-Supreme-Laundry-Management-System/crm.html',
-  '/De-Supreme-Laundry-Management-System/scheduling.html',
-  '/De-Supreme-Laundry-Management-System/marketing.html',
-  '/De-Supreme-Laundry-Management-System/systems.html'
+  '/De-Supreme-Laundry-Management-System-/',
+  '/De-Supreme-Laundry-Management-System-/index.html',
+  '/De-Supreme-Laundry-Management-System-/adminTransEntry.html',
+  '/De-Supreme-Laundry-Management-System-/finance.html',
+  '/De-Supreme-Laundry-Management-System-/finance2.html',
+  '/De-Supreme-Laundry-Management-System-/crm.html',
+  '/De-Supreme-Laundry-Management-System-/scheduling.html',
+  '/De-Supreme-Laundry-Management-System-/marketing.html',
+  '/De-Supreme-Laundry-Management-System-/systems.html'
 ];
 
 self.addEventListener('install', event => {
@@ -27,7 +27,7 @@ self.addEventListener('install', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
   
-  if (!url.pathname.startsWith('/De-Supreme-Laundry-Management-System/')) {
+  if (!url.pathname.startsWith('/De-Supreme-Laundry-Management-System-/')) {
     return;
   }
   
