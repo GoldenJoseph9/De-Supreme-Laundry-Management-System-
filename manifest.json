@@ -10,44 +10,9 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "https://raw.githubusercontent.com/goldenjoseph9/De-Supreme-Laundry-Management-System-/main/icon-72x72.png",
-      "sizes": "72x72",
-      "type": "image/png"
-    },
-    {
-      "src": "https://raw.githubusercontent.com/goldenjoseph9/De-Supreme-Laundry-Management-System-/main/icon-96x96.png",
-      "sizes": "96x96",
-      "type": "image/png"
-    },
-    {
-      "src": "https://raw.githubusercontent.com/goldenjoseph9/De-Supreme-Laundry-Management-System-/main/icon-128x128.png",
-      "sizes": "128x128",
-      "type": "image/png"
-    },
-    {
-      "src": "https://raw.githubusercontent.com/goldenjoseph9/De-Supreme-Laundry-Management-System-/main/icon-144x144.png",
-      "sizes": "144x144",
-      "type": "image/png"
-    },
-    {
-      "src": "https://raw.githubusercontent.com/goldenjoseph9/De-Supreme-Laundry-Management-System-/main/icon-152x152.png",
-      "sizes": "152x152",
-      "type": "image/png"
-    },
-    {
-      "src": "https://raw.githubusercontent.com/goldenjoseph9/De-Supreme-Laundry-Management-System-/main/icon-192x192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "https://raw.githubusercontent.com/goldenjoseph9/De-Supreme-Laundry-Management-System-/main/icon-384x384.png",
-      "sizes": "384x384",
-      "type": "image/png"
-    },
-    {
-      "src": "https://raw.githubusercontent.com/goldenjoseph9/De-Supreme-Laundry-Management-System-/main/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%231e3a5f'/%3E%3Ctext x='50' y='67' font-size='50' text-anchor='middle' fill='white' font-family='Arial'%3E🧺%3C/text%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ]
