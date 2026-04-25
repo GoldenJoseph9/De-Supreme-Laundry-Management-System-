@@ -1,98 +1,54 @@
 {
-  "name": "De Supreme Laundry Pro",
+  "name": "De Supreme Laundry",
   "short_name": "Laundry Pro",
-  "description": "Complete Laundromat Management System - Manage customers, transactions, and finances",
-  "start_url": "/De-Supreme-Laundry-Management-System-/index.html",
+  "description": "Complete Laundromat Management System",
+  "start_url": "/De-Supreme-Laundry-Management-System-/",
   "scope": "/De-Supreme-Laundry-Management-System-/",
   "display": "standalone",
   "theme_color": "#1e3a5f",
-  "background_color": "#f5f7fa",
+  "background_color": "#ffffff",
   "orientation": "portrait",
-  "categories": ["business", "productivity"],
-  "lang": "en",
-  "dir": "ltr",
   "icons": [
     {
-      "src": "https://raw.githubusercontent.com/your-repo/icons/icon-72.png",
+      "src": "https://raw.githubusercontent.com/goldenjoseph9/De-Supreme-Laundry-Management-System-/main/icon-72x72.png",
       "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
-      "src": "https://raw.githubusercontent.com/your-repo/icons/icon-96.png",
+      "src": "https://raw.githubusercontent.com/goldenjoseph9/De-Supreme-Laundry-Management-System-/main/icon-96x96.png",
       "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
-      "src": "https://raw.githubusercontent.com/your-repo/icons/icon-128.png",
+      "src": "https://raw.githubusercontent.com/goldenjoseph9/De-Supreme-Laundry-Management-System-/main/icon-128x128.png",
       "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
-      "src": "https://raw.githubusercontent.com/your-repo/icons/icon-144.png",
+      "src": "https://raw.githubusercontent.com/goldenjoseph9/De-Supreme-Laundry-Management-System-/main/icon-144x144.png",
       "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
-      "src": "https://raw.githubusercontent.com/your-repo/icons/icon-152.png",
+      "src": "https://raw.githubusercontent.com/goldenjoseph9/De-Supreme-Laundry-Management-System-/main/icon-152x152.png",
       "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
-      "src": "https://raw.githubusercontent.com/your-repo/icons/icon-192.png",
+      "src": "https://raw.githubusercontent.com/goldenjoseph9/De-Supreme-Laundry-Management-System-/main/icon-192x192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
-      "src": "https://raw.githubusercontent.com/your-repo/icons/icon-384.png",
+      "src": "https://raw.githubusercontent.com/goldenjoseph9/De-Supreme-Laundry-Management-System-/main/icon-384x384.png",
       "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     },
     {
-      "src": "https://raw.githubusercontent.com/your-repo/icons/icon-512.png",
+      "src": "https://raw.githubusercontent.com/goldenjoseph9/De-Supreme-Laundry-Management-System-/main/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ],
-  "screenshots": [
-    {
-      "src": "https://raw.githubusercontent.com/your-repo/screenshots/login.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Login Screen"
-    },
-    {
-      "src": "https://raw.githubusercontent.com/your-repo/screenshots/dashboard.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Dashboard"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "New Transaction",
-      "short_name": "Add TX",
-      "description": "Quickly add a new transaction",
-      "url": "/De-Supreme-Laundry-Management-System-/adminTransEntry.html",
-      "icons": [{ "src": "https://raw.githubusercontent.com/your-repo/icons/icon-96.png", "sizes": "96x96" }]
-    },
-    {
-      "name": "Customer CRM",
-      "short_name": "Customers",
-      "description": "View and manage customers",
-      "url": "/De-Supreme-Laundry-Management-System-/crm.html",
-      "icons": [{ "src": "https://raw.githubusercontent.com/your-repo/icons/icon-96.png", "sizes": "96x96" }]
-    }
-  ],
-  "related_applications": [],
-  "prefer_related_applications": false
+  ]
 }
