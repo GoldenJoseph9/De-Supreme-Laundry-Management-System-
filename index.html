@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>De Supreme Laundry</title>
     
-    <!-- PWA Manifest - USE FULL PATH -->
-    <link rel="manifest" href="/De-Supreme-Laundry-Management-System-/manifest.json">
+    <!-- PWA Manifest - USE RELATIVE PATH for GitHub Pages -->
+    <link rel="manifest" href="./manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Laundry Pro">
@@ -22,7 +23,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Shared app.js -->
-    <script src="app.js"></script>
+    <script src="./app.js"></script>
     
     <style>
         * {
@@ -213,11 +214,6 @@
     </button>
 </div>
 
-
-
-
-    
-
 <!-- PWA Install Script -->
 <script>
     let deferredPrompt;
@@ -247,25 +243,13 @@
         console.log('✅ App installed successfully');
         if (installContainer) installContainer.style.display = 'none';
     });
-    
-    // FORCE SHOW INSTALL BUTTON FOR TESTING
-    setTimeout(() => {
-        if (installContainer) {
-            installContainer.style.display = 'block';
-            console.log('🔧 Force showing install button for testing');
-        }
-    }, 2000);
 </script>
 
-
-
-    
-
-<!-- Service Worker Registration - ONLY ONE, USE FULL PATH -->
+<!-- Service Worker Registration - USE RELATIVE PATH -->
 <script>
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/De-Supreme-Laundry-Management-System-/sw.js')
+            navigator.serviceWorker.register('./sw.js', { scope: './' })
                 .then(reg => console.log('✅ SW registered:', reg))
                 .catch(err => console.log('❌ SW failed:', err));
         });
